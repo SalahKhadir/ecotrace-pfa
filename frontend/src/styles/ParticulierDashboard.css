@@ -1011,3 +1011,759 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* CSS pour la section Formulaires améliorée - À ajouter à votre ParticulierDashboard.css */
+
+/* Header amélioré */
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.header-title h2 {
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--eco-dark);
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.refresh-btn {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+
+.refresh-btn:hover {
+  background: linear-gradient(135deg, #059669, #047857);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
+}
+
+/* Filtres */
+.filters-container {
+  margin-bottom: 2rem;
+}
+
+.filter-tabs {
+  display: flex;
+  gap: 0.5rem;
+  background: white;
+  padding: 0.5rem;
+  border-radius: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow-x: auto;
+}
+
+.filter-tab {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 0.75rem;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filter-tab:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.filter-tab.active {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.filter-tab .count {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  min-width: 1.5rem;
+  text-align: center;
+}
+
+.filter-tab.active .count {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Grille des formulaires améliorée */
+.formulaires-grid-improved {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Cartes de formulaires améliorées */
+.formulaire-card-improved {
+  background: white;
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.formulaire-card-improved:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+  border-color: #10b981;
+}
+
+/* Indicateurs de couleur selon le statut */
+.formulaire-card-improved.soumis {
+  border-left: 4px solid #f59e0b;
+}
+
+.formulaire-card-improved.valide {
+  border-left: 4px solid #10b981;
+}
+
+.formulaire-card-improved.rejete {
+  border-left: 4px solid #ef4444;
+}
+
+.formulaire-card-improved.en_cours {
+  border-left: 4px solid #3b82f6;
+}
+
+.formulaire-card-improved.termine {
+  border-left: 4px solid #10b981;
+}
+
+/* Header de la carte amélioré */
+.formulaire-card-header-improved {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+
+.formulaire-reference-improved {
+  flex: 1;
+}
+
+.reference-number {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #1f2937;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.formulaire-type-improved {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.type-icon {
+  font-size: 1.25rem;
+}
+
+.type-label {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.statut-container-improved {
+  flex-shrink: 0;
+}
+
+.status-badge-improved {
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.status-icon {
+  font-size: 0.875rem;
+}
+
+/* Corps de la carte amélioré */
+.formulaire-body-improved {
+  margin-bottom: 1rem;
+}
+
+.formulaire-description-improved {
+  margin-bottom: 1rem;
+}
+
+.formulaire-description-improved p {
+  color: #374151;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.formulaire-details-improved {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.detail-item-improved {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.detail-icon {
+  font-size: 1rem;
+  width: 1.25rem;
+  text-align: center;
+}
+
+.detail-text {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.formulaire-photos-improved {
+  margin-top: 0.75rem;
+}
+
+.photos-label {
+  background: #f3f4f6;
+  color: #6b7280;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* Footer de la carte amélioré */
+.formulaire-footer-improved {
+  border-top: 1px solid #f3f4f6;
+  padding-top: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+.formulaire-dates-improved {
+  flex: 1;
+}
+
+.creation-date, .traitement-date {
+  display: block;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin-bottom: 0.25rem;
+}
+
+.traitement-date {
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.formulaire-actions-improved {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.action-btn-improved {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.view-btn {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.view-btn:hover {
+  background: #d1d5db;
+}
+
+.collecte-btn {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+}
+
+.collecte-btn:hover {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+}
+
+/* Indicateur de collecte */
+.collecte-indicator-improved {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+}
+
+.collecte-badge {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 1.25rem;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-header h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 0.5rem;
+  transition: background 0.3s ease;
+}
+
+.close-btn:hover {
+  background: #f3f4f6;
+}
+
+.modal-body {
+  padding: 2rem;
+}
+
+.detail-section {
+  margin-bottom: 2rem;
+}
+
+.detail-section h4 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #f3f4f6;
+}
+
+.detail-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.detail-item-full {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: #f8fafc;
+  border-radius: 0.5rem;
+}
+
+.detail-item-full strong {
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.photos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.detail-photo {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 0.75rem;
+  border: 2px solid #e5e7eb;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.detail-photo:hover {
+  border-color: #10b981;
+  transform: scale(1.05);
+}
+
+.modal-footer {
+  padding: 1.5rem 2rem;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.modal-btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.modal-btn.secondary {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.modal-btn.secondary:hover {
+  background: #d1d5db;
+}
+
+.modal-btn.primary {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+}
+
+.modal-btn.primary:hover {
+  background: linear-gradient(135deg, #059669, #047857);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .formulaires-grid-improved {
+    grid-template-columns: 1fr;
+  }
+  
+  .header-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filter-tabs {
+    flex-wrap: wrap;
+  }
+  
+  .formulaire-card-header-improved {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+  
+  .formulaire-footer-improved {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .formulaire-actions-improved {
+    justify-content: stretch;
+  }
+  
+  .action-btn-improved {
+    flex: 1;
+    justify-content: center;
+  }
+  
+  .modal-content {
+    margin: 1rem;
+    max-height: calc(100vh - 2rem);
+  }
+  
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .detail-item-full {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.formulaire-card-improved {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal-content {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Variables CSS pour les couleurs (ajoutez-les si elles n'existent pas déjà) */
+:root {
+  --eco-green: #10b981;
+  --eco-green-light: #34d399;
+  --eco-green-10: rgba(16, 185, 129, 0.1);
+  --eco-blue: #3b82f6;
+  --eco-blue-light: #60a5fa;
+  --eco-dark: #1f2937;
+  --eco-gray: #f9fafb;
+}
+
+/* Améliorations pour l'accessibilité */
+.formulaire-card-improved:focus {
+  outline: 2px solid #10b981;
+  outline-offset: 2px;
+}
+
+.filter-tab:focus,
+.action-btn-improved:focus,
+.modal-btn:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Effets de survol améliorés */
+.formulaire-card-improved::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #10b981, #3b82f6);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: 1.25rem;
+  z-index: -1;
+}
+
+.formulaire-card-improved:hover::before {
+  opacity: 0.05;
+}
+
+/* États de chargement */
+.loading-card {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Amélioration de l'état vide existant */
+.empty-state-button {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  padding: 0.75rem 2rem;
+  border: none;
+  border-radius: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.empty-state-button:hover {
+  background: linear-gradient(135deg, #059669, #047857);
+  transform: translateY(-2px);
+}
+
+.recent-activity {
+  background: #ffffff;
+  padding: 2rem;
+  border-radius: 1.5rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  font-family: 'Inter', sans-serif;
+  color: #333;
+  transition: all 0.3s ease;
+}
+
+.recent-activity h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  color: #1f2937;
+  border-bottom: 2px solid #f3f4f6;
+  padding-bottom: 0.5rem;
+}
+
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.activity-item {
+  background: #f9fafb;
+  border-left: 5px solid #3b82f6; /* par défaut, peut changer selon statut */
+  padding: 1rem 1.5rem;
+  border-radius: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s ease-in-out;
+}
+
+.activity-item:hover {
+  background-color: #f3f4f6;
+  transform: translateY(-2px);
+}
+
+.activity-info h4 {
+  font-size: 1.125rem;
+  margin: 0;
+  font-weight: 500;
+  color: #111827;
+}
+
+.activity-info p {
+  font-size: 0.95rem;
+  color: #4b5563;
+  margin: 0.25rem 0;
+}
+
+.activity-date {
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+.activity-status {
+  font-weight: bold;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  text-transform: capitalize;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.status-valide {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.status-en_attente {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.status-rejete {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 2rem;
+  background: #f3f4f6;
+  border-radius: 1rem;
+  color: #6b7280;
+}
+
+.empty-state-button {
+  margin-top: 1rem;
+  background-color: #3b82f6;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.empty-state-button:hover {
+  background-color: #2563eb;
+}

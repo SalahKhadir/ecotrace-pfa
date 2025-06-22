@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.utils import timezone
+from django.db import transaction
 from .models import FormulaireCollecte, Collecte, Dechet
 
 class FormulaireCollecteSerializer(serializers.ModelSerializer):
@@ -20,11 +21,11 @@ class FormulaireCollecteSerializer(serializers.ModelSerializer):
             'instructions_speciales', 'photo1', 'photo2', 'photo3', 'photos',
             'statut', 'point_collecte', 'horaires_ouverture',
             'date_creation', 'date_modification', 'date_traitement',
-            'collecte_info'  # CORRIGÉ: supprimé 'collecte'
+            'collecte_info'
         ]
         read_only_fields = [
             'utilisateur', 'reference', 'date_creation', 'date_modification',
-            'date_traitement'  # CORRIGÉ: supprimé 'collecte'
+            'date_traitement'
         ]
     
     def get_utilisateur_info(self, obj):
@@ -36,7 +37,7 @@ class FormulaireCollecteSerializer(serializers.ModelSerializer):
             'email': user.email,
             'first_name': user.first_name,
             'last_name': user.last_name,
-            'phone': user.phone,
+            'phone': getattr(user, 'phone', ''),
         }
     
     def get_photos(self, obj):
@@ -45,7 +46,7 @@ class FormulaireCollecteSerializer(serializers.ModelSerializer):
     
     def get_collecte_info(self, obj):
         """Informations sur la collecte associée"""
-        collecte = obj.get_collecte_associee()  # CORRIGÉ: utilise la méthode du modèle
+        collecte = obj.get_collecte_associee()
         if collecte:
             return {
                 'id': collecte.id,
@@ -88,7 +89,7 @@ class FormulaireCollecteSerializer(serializers.ModelSerializer):
 
 class FormulaireCollecteCreateSerializer(serializers.ModelSerializer):
     """
-    Serializer simplifié pour la création de formulaires
+    Serializer simplifié pour la création de formulaires avec gestion des race conditions
     """
     class Meta:
         model = FormulaireCollecte
@@ -97,6 +98,23 @@ class FormulaireCollecteCreateSerializer(serializers.ModelSerializer):
             'date_souhaitee', 'creneau_horaire', 'adresse_collecte', 'telephone',
             'instructions_speciales', 'photo1', 'photo2', 'photo3'
         ]
+    
+    def validate_date_souhaitee(self, value):
+        """Valider que la date souhaitée n'est pas dans le passé"""
+        if value < timezone.now().date():
+            raise serializers.ValidationError(
+                "La date souhaitée ne peut pas être dans le passé."
+            )
+        return value
+    
+    def validate_telephone(self, value):
+        """Valider le format du téléphone"""
+        import re
+        if not re.match(r'^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$', value.replace(' ', '')):
+            raise serializers.ValidationError(
+                "Format de téléphone invalide. Utilisez un format français valide."
+            )
+        return value
     
     def validate(self, data):
         """Validation personnalisée selon le mode de collecte"""
@@ -110,6 +128,63 @@ class FormulaireCollecteCreateSerializer(serializers.ModelSerializer):
             })
         
         return data
+    
+    @transaction.atomic
+    def create(self, validated_data):
+        """
+        Créer un formulaire avec gestion des race conditions pour la référence
+        """
+        # Générer une référence unique avec retry
+        formulaire = FormulaireCollecte(**validated_data)
+        
+        # Tentative de génération de référence unique
+        today = timezone.now()
+        prefix = f"COL-{today.year}-"
+        
+        for attempt in range(10):  # Maximum 10 tentatives
+            # Compter les formulaires existants avec une petite marge
+            existing_count = FormulaireCollecte.objects.filter(
+                date_creation__date=today.date()
+            ).count()
+            
+            # Calculer le numéro séquentiel
+            sequence_number = existing_count + 1 + attempt
+            reference = f"{prefix}{sequence_number:03d}"
+            
+            # Vérifier si la référence existe déjà
+            if not FormulaireCollecte.objects.filter(reference=reference).exists():
+                formulaire.reference = reference
+                break
+        else:
+            # Si toutes les tentatives échouent, utiliser un UUID
+            import uuid
+            formulaire.reference = f"{prefix}{uuid.uuid4().hex[:6].upper()}"
+        
+        formulaire.save()
+        return formulaire
+
+class FormulaireCollecteListSerializer(serializers.ModelSerializer):
+    """
+    Serializer simplifié pour la liste des formulaires
+    """
+    utilisateur_nom = serializers.SerializerMethodField()
+    photos_count = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = FormulaireCollecte
+        fields = [
+            'id', 'reference', 'utilisateur_nom', 'type_dechets', 'description',
+            'mode_collecte', 'date_souhaitee', 'statut', 'photos_count',
+            'date_creation'
+        ]
+    
+    def get_utilisateur_nom(self, obj):
+        """Nom de l'utilisateur"""
+        return obj.utilisateur.get_full_name() or obj.utilisateur.username
+    
+    def get_photos_count(self, obj):
+        """Nombre de photos attachées"""
+        return len(obj.get_photos())
 
 class CollecteSerializer(serializers.ModelSerializer):
     """
@@ -143,7 +218,7 @@ class CollecteSerializer(serializers.ModelSerializer):
             'email': user.email,
             'first_name': user.first_name,
             'last_name': user.last_name,
-            'phone': user.phone,
+            'phone': getattr(user, 'phone', ''),
         }
     
     def get_transporteur_info(self, obj):
@@ -156,8 +231,8 @@ class CollecteSerializer(serializers.ModelSerializer):
                 'email': user.email,
                 'first_name': user.first_name,
                 'last_name': user.last_name,
-                'phone': user.phone,
-                'company_name': user.company_name,
+                'phone': getattr(user, 'phone', ''),
+                'company_name': getattr(user, 'company_name', ''),
             }
         return None
     
@@ -175,6 +250,60 @@ class CollecteSerializer(serializers.ModelSerializer):
     def get_dechets_count(self, obj):
         """Nombre de déchets associés à cette collecte"""
         return obj.dechets.count()
+    
+    @transaction.atomic
+    def create(self, validated_data):
+        """
+        Créer une collecte avec gestion des race conditions pour la référence
+        """
+        collecte = Collecte(**validated_data)
+        
+        # Générer une référence unique avec retry
+        today = timezone.now()
+        prefix = f"RDV-{today.year}-"
+        
+        for attempt in range(10):  # Maximum 10 tentatives
+            existing_count = Collecte.objects.filter(
+                created_at__date=today.date()
+            ).count()
+            
+            sequence_number = existing_count + 1 + attempt
+            reference = f"{prefix}{sequence_number:03d}"
+            
+            if not Collecte.objects.filter(reference=reference).exists():
+                collecte.reference = reference
+                break
+        else:
+            # Si toutes les tentatives échouent, utiliser un UUID
+            import uuid
+            collecte.reference = f"{prefix}{uuid.uuid4().hex[:6].upper()}"
+        
+        collecte.save()
+        return collecte
+
+class CollecteListSerializer(serializers.ModelSerializer):
+    """
+    Serializer simplifié pour la liste des collectes
+    """
+    utilisateur_nom = serializers.SerializerMethodField()
+    transporteur_nom = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Collecte
+        fields = [
+            'id', 'reference', 'utilisateur_nom', 'date_collecte', 'mode_collecte',
+            'statut', 'transporteur_nom', 'created_at'
+        ]
+    
+    def get_utilisateur_nom(self, obj):
+        """Nom de l'utilisateur"""
+        return obj.utilisateur.get_full_name() or obj.utilisateur.username
+    
+    def get_transporteur_nom(self, obj):
+        """Nom du transporteur"""
+        if obj.transporteur:
+            return obj.transporteur.get_full_name() or obj.transporteur.username
+        return None
 
 class DechetSerializer(serializers.ModelSerializer):
     """
@@ -212,51 +341,4 @@ class DechetSerializer(serializers.ModelSerializer):
                 'first_name': user.first_name,
                 'last_name': user.last_name,
             }
-        return None
-
-class FormulaireCollecteListSerializer(serializers.ModelSerializer):
-    """
-    Serializer simplifié pour la liste des formulaires
-    """
-    utilisateur_nom = serializers.SerializerMethodField()
-    photos_count = serializers.SerializerMethodField()
-    
-    class Meta:
-        model = FormulaireCollecte
-        fields = [
-            'id', 'reference', 'utilisateur_nom', 'type_dechets', 'description',
-            'mode_collecte', 'date_souhaitee', 'statut', 'photos_count',
-            'date_creation'
-        ]
-    
-    def get_utilisateur_nom(self, obj):
-        """Nom de l'utilisateur"""
-        return obj.utilisateur.get_full_name() or obj.utilisateur.username
-    
-    def get_photos_count(self, obj):
-        """Nombre de photos attachées"""
-        return len(obj.get_photos())
-
-class CollecteListSerializer(serializers.ModelSerializer):
-    """
-    Serializer simplifié pour la liste des collectes
-    """
-    utilisateur_nom = serializers.SerializerMethodField()
-    transporteur_nom = serializers.SerializerMethodField()
-    
-    class Meta:
-        model = Collecte
-        fields = [
-            'id', 'reference', 'utilisateur_nom', 'date_collecte', 'mode_collecte',
-            'statut', 'transporteur_nom', 'created_at'
-        ]
-    
-    def get_utilisateur_nom(self, obj):
-        """Nom de l'utilisateur"""
-        return obj.utilisateur.get_full_name() or obj.utilisateur.username
-    
-    def get_transporteur_nom(self, obj):
-        """Nom du transporteur"""
-        if obj.transporteur:
-            return obj.transporteur.get_full_name() or obj.transporteur.username
         return None

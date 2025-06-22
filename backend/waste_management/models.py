@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.conf import settings
 from django.utils import timezone
 import uuid
@@ -182,16 +182,28 @@ class FormulaireCollecte(models.Model):
         super().save(*args, **kwargs)
     
     def generer_reference(self):
-        """Générer une référence unique pour le formulaire"""
+        """Générer une référence unique pour le formulaire avec gestion des conflits"""
         today = timezone.now()
         prefix = f"COL-{today.year}-"
         
-        # Compter les formulaires créés aujourd'hui
-        count = FormulaireCollecte.objects.filter(
-            date_creation__date=today.date()
-        ).count() + 1
-        
-        return f"{prefix}{count:03d}"
+        # Utiliser une transaction atomique pour éviter les race conditions
+        with transaction.atomic():
+            # Boucle avec retry pour gérer les conflits potentiels
+            for attempt in range(50):  # Maximum 50 tentatives
+                # Compter les formulaires créés aujourd'hui + tentatives
+                count = FormulaireCollecte.objects.filter(
+                    date_creation__date=today.date()
+                ).count() + 1 + attempt
+                
+                reference = f"{prefix}{count:03d}"
+                
+                # Vérifier si la référence existe déjà
+                if not FormulaireCollecte.objects.filter(reference=reference).exists():
+                    return reference
+            
+            # Si toutes les tentatives échouent, utiliser un UUID pour garantir l'unicité
+            unique_suffix = uuid.uuid4().hex[:6].upper()
+            return f"{prefix}{unique_suffix}"
     
     def valider(self, validateur=None):
         """Valider le formulaire et créer une collecte si nécessaire"""
@@ -277,7 +289,7 @@ class Collecte(models.Model):
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
-        related_name='collectes_associees',  # CORRIGÉ: related_name spécifique
+        related_name='collectes_associees',
         help_text='Formulaire à l\'origine de cette collecte'
     )
     
@@ -336,15 +348,28 @@ class Collecte(models.Model):
         super().save(*args, **kwargs)
     
     def generer_reference(self):
-        """Générer une référence unique pour la collecte"""
+        """Générer une référence unique pour la collecte avec gestion des conflits"""
         today = timezone.now()
         prefix = f"RDV-{today.year}-"
         
-        count = Collecte.objects.filter(
-            created_at__date=today.date()
-        ).count() + 1
-        
-        return f"{prefix}{count:03d}"
+        # Utiliser une transaction atomique pour éviter les race conditions
+        with transaction.atomic():
+            # Boucle avec retry pour gérer les conflits potentiels
+            for attempt in range(50):  # Maximum 50 tentatives
+                # Compter les collectes créées aujourd'hui + tentatives
+                count = Collecte.objects.filter(
+                    created_at__date=today.date()
+                ).count() + 1 + attempt
+                
+                reference = f"{prefix}{count:03d}"
+                
+                # Vérifier si la référence existe déjà
+                if not Collecte.objects.filter(reference=reference).exists():
+                    return reference
+            
+            # Si toutes les tentatives échouent, utiliser un UUID pour garantir l'unicité
+            unique_suffix = uuid.uuid4().hex[:6].upper()
+            return f"{prefix}{unique_suffix}"
     
     def mettre_a_jour_statut(self, nouveau_statut):
         """Mettre à jour le statut de la collecte"""

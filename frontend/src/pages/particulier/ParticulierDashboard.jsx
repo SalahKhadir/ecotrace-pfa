@@ -863,8 +863,296 @@ const CollectesSection = ({ collectes }) => {
   );
 };
 
-// Section Formulaires
+// Section Formulaires - VERSION AMÉLIORÉE
+// Remplacez la section FormulairesSection existante par ce code
 const FormulairesSection = ({ formulaires, onRefresh }) => {
+  const [selectedFormulaire, setSelectedFormulaire] = useState(null);
+  const [filter, setFilter] = useState('all');
+
+  const getStatutColor = (statut) => {
+    const colors = {
+      'SOUMIS': '#f59e0b',
+      'EN_ATTENTE': '#f59e0b', 
+      'VALIDE': '#10b981',
+      'REJETE': '#ef4444',
+      'EN_COURS': '#3b82f6',
+      'TERMINE': '#10b981'
+    };
+    return colors[statut] || '#6b7280';
+  };
+
+  const getStatutIcon = (statut) => {
+    const icons = {
+      'SOUMIS': '📝',
+      'EN_ATTENTE': '⏳',
+      'VALIDE': '✅',
+      'REJETE': '❌',
+      'EN_COURS': '🔄',
+      'TERMINE': '🎉'
+    };
+    return icons[statut] || '📄';
+  };
+
+  const getStatutLabel = (statut) => {
+    const labels = {
+      'SOUMIS': 'Soumis',
+      'EN_ATTENTE': 'En attente',
+      'VALIDE': 'Validé',
+      'REJETE': 'Rejeté', 
+      'EN_COURS': 'En cours',
+      'TERMINE': 'Terminé'
+    };
+    return labels[statut] || statut;
+  };
+
+  const getTypeIcon = (type) => {
+    const icons = {
+      'ordinateur': '💻',
+      'smartphone': '📱',
+      'electromenager': '🏠',
+      'televiseur': '📺',
+      'composants': '🔧',
+      'autres': '📦'
+    };
+    return icons[type] || '📦';
+  };
+
+  const getTypeLabel = (type) => {
+    const labels = {
+      'ordinateur': 'Ordinateur / Laptop',
+      'smartphone': 'Smartphone / Tablette',
+      'electromenager': 'Électroménager',
+      'televiseur': 'Téléviseur / Écran',
+      'composants': 'Composants électroniques',
+      'autres': 'Autres'
+    };
+    return labels[type] || type;
+  };
+
+  const filteredFormulaires = formulaires.filter(formulaire => {
+    if (filter === 'all') return true;
+    return formulaire.statut === filter;
+  });
+
+  const getFilterCounts = () => {
+    return {
+      all: formulaires.length,
+      SOUMIS: formulaires.filter(f => f.statut === 'SOUMIS').length,
+      VALIDE: formulaires.filter(f => f.statut === 'VALIDE').length,
+      EN_COURS: formulaires.filter(f => f.statut === 'EN_COURS').length,
+      TERMINE: formulaires.filter(f => f.statut === 'TERMINE').length,
+      REJETE: formulaires.filter(f => f.statut === 'REJETE').length,
+    };
+  };
+
+  const counts = getFilterCounts();
+
+  return (
+    <div className="formulaires-section">
+      <div className="section-header">
+        <div className="header-content">
+          <div className="header-title">
+            <h2>📋 Mes formulaires</h2>
+            <p>Suivez l'état de vos demandes de collecte</p>
+          </div>
+          <button onClick={onRefresh} className="refresh-btn">
+            🔄 Actualiser
+          </button>
+        </div>
+      </div>
+
+      {/* Filtres */}
+      <div className="filters-container">
+        <div className="filter-tabs">
+          <button 
+            className={`filter-tab ${filter === 'all' ? 'active' : ''}`}
+            onClick={() => setFilter('all')}
+          >
+            Tous <span className="count">{counts.all}</span>
+          </button>
+          <button 
+            className={`filter-tab ${filter === 'SOUMIS' ? 'active' : ''}`}
+            onClick={() => setFilter('SOUMIS')}
+          >
+            En attente <span className="count">{counts.SOUMIS}</span>
+          </button>
+          <button 
+            className={`filter-tab ${filter === 'VALIDE' ? 'active' : ''}`}
+            onClick={() => setFilter('VALIDE')}
+          >
+            Validés <span className="count">{counts.VALIDE}</span>
+          </button>
+          <button 
+            className={`filter-tab ${filter === 'EN_COURS' ? 'active' : ''}`}
+            onClick={() => setFilter('EN_COURS')}
+          >
+            En cours <span className="count">{counts.EN_COURS}</span>
+          </button>
+          <button 
+            className={`filter-tab ${filter === 'TERMINE' ? 'active' : ''}`}
+            onClick={() => setFilter('TERMINE')}
+          >
+            Terminés <span className="count">{counts.TERMINE}</span>
+          </button>
+          {counts.REJETE > 0 && (
+            <button 
+              className={`filter-tab ${filter === 'REJETE' ? 'active' : ''}`}
+              onClick={() => setFilter('REJETE')}
+            >
+              Rejetés <span className="count">{counts.REJETE}</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Liste des formulaires */}
+      {filteredFormulaires.length > 0 ? (
+        <div className="formulaires-grid-improved">
+          {filteredFormulaires.map(formulaire => (
+            <div 
+              key={formulaire.id} 
+              className={`formulaire-card-improved ${formulaire.statut.toLowerCase()}`}
+              onClick={() => setSelectedFormulaire(formulaire)}
+            >
+              {/* Header de la carte */}
+              <div className="formulaire-card-header-improved">
+                <div className="formulaire-reference-improved">
+                  <span className="reference-number">{formulaire.reference}</span>
+                  <div className="formulaire-type-improved">
+                    <span className="type-icon">{getTypeIcon(formulaire.type_dechets)}</span>
+                    <span className="type-label">{getTypeLabel(formulaire.type_dechets)}</span>
+                  </div>
+                </div>
+                <div className="statut-container-improved">
+                  <span 
+                    className="status-badge-improved"
+                    style={{ backgroundColor: getStatutColor(formulaire.statut) }}
+                  >
+                    <span className="status-icon">{getStatutIcon(formulaire.statut)}</span>
+                    {getStatutLabel(formulaire.statut)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Corps de la carte */}
+              <div className="formulaire-body-improved">
+                <div className="formulaire-description-improved">
+                  <p>{formulaire.description}</p>
+                </div>
+
+                <div className="formulaire-details-improved">
+                  <div className="detail-item-improved">
+                    <span className="detail-icon">📍</span>
+                    <span className="detail-text">
+                      {formulaire.mode_collecte === 'domicile' ? 'Collecte à domicile' : 'Apport volontaire'}
+                    </span>
+                  </div>
+                  
+                  <div className="detail-item-improved">
+                    <span className="detail-icon">📅</span>
+                    <span className="detail-text">
+                      {new Date(formulaire.date_souhaitee).toLocaleDateString('fr-FR')}
+                    </span>
+                  </div>
+
+                  {formulaire.quantite_estimee && (
+                    <div className="detail-item-improved">
+                      <span className="detail-icon">⚖️</span>
+                      <span className="detail-text">{formulaire.quantite_estimee}</span>
+                    </div>
+                  )}
+
+                  {formulaire.creneau_horaire && formulaire.mode_collecte === 'domicile' && (
+                    <div className="detail-item-improved">
+                      <span className="detail-icon">🕐</span>
+                      <span className="detail-text">
+                        {formulaire.creneau_horaire === 'matin' ? 'Matin (8h-12h)' : 
+                         formulaire.creneau_horaire === 'apres_midi' ? 'Après-midi (14h-18h)' : 
+                         'Flexible'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Photos */}
+                {formulaire.photos_count && formulaire.photos_count > 0 && (
+                  <div className="formulaire-photos-improved">
+                    <span className="photos-label">📸 {formulaire.photos_count} photo(s)</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer de la carte */}
+              <div className="formulaire-footer-improved">
+                <div className="formulaire-dates-improved">
+                  <span className="creation-date">
+                    Créé le {new Date(formulaire.date_creation).toLocaleDateString('fr-FR')}
+                  </span>
+                  {formulaire.date_traitement && (
+                    <span className="traitement-date">
+                      Traité le {new Date(formulaire.date_traitement).toLocaleDateString('fr-FR')}
+                    </span>
+                  )}
+                </div>
+
+                <div className="formulaire-actions-improved">
+                  <button className="action-btn-improved view-btn">
+                    👁️ Détails
+                  </button>
+                  
+                  {formulaire.collecte_info && (
+                    <button className="action-btn-improved collecte-btn">
+                      📦 Collecte
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Indicateur de collecte associée */}
+              {formulaire.collecte_info && (
+                <div className="collecte-indicator-improved">
+                  <span className="collecte-badge">
+                    📦 Collecte {formulaire.collecte_info.reference}
+                  </span>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="empty-state">
+          <div className="empty-icon">📋</div>
+          <h3>Aucun formulaire {filter !== 'all' ? 'avec ce statut' : ''}</h3>
+          <p>
+            {filter !== 'all' 
+              ? `Vous n'avez pas encore de formulaire avec le statut "${getStatutLabel(filter)}".`
+              : "Vous n'avez pas encore soumis de formulaire de collecte."
+            }
+          </p>
+          {filter !== 'all' && (
+            <button 
+              className="empty-state-button"
+              onClick={() => setFilter('all')}
+            >
+              Voir tous les formulaires
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Modal de détails du formulaire */}
+      {selectedFormulaire && (
+        <FormulaireDetailsModal 
+          formulaire={selectedFormulaire}
+          onClose={() => setSelectedFormulaire(null)}
+        />
+      )}
+    </div>
+  );
+};
+
+// Modal pour les détails du formulaire
+const FormulaireDetailsModal = ({ formulaire, onClose }) => {
   const getStatutColor = (statut) => {
     const colors = {
       'SOUMIS': '#f59e0b',
@@ -878,59 +1166,102 @@ const FormulairesSection = ({ formulaires, onRefresh }) => {
   };
 
   return (
-    <div className="formulaires-section">
-      <div className="section-header">
-        <h2>Mes formulaires</h2>
-        <p>Suivez l'état de vos demandes de collecte</p>
-      </div>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3>📋 Détails du formulaire {formulaire.reference}</h3>
+          <button onClick={onClose} className="close-btn">❌</button>
+        </div>
 
-      {formulaires.length > 0 ? (
-        <div className="formulaires-grid">
-          {formulaires.map(formulaire => (
-            <div key={formulaire.id} className="formulaire-card">
-              <div className="formulaire-card-header">
-                <h3>{formulaire.reference}</h3>
+        <div className="modal-body">
+          <div className="detail-section">
+            <h4>Informations générales</h4>
+            <div className="detail-grid">
+              <div className="detail-item-full">
+                <strong>Statut:</strong>
                 <span 
-                  className="status-badge"
+                  className="status-badge-improved"
                   style={{ backgroundColor: getStatutColor(formulaire.statut) }}
                 >
-                  {getStatutLabel(formulaire.statut)}
+                  {formulaire.statut}
                 </span>
               </div>
-              
-              <div className="formulaire-details">
-                <p><strong>Type:</strong> {formulaire.type_dechets}</p>
-                <p><strong>Mode:</strong> {formulaire.mode_collecte === 'domicile' ? 'Collecte à domicile' : 'Apport volontaire'}</p>
-                <p><strong>Date souhaitée:</strong> {new Date(formulaire.date_souhaitee).toLocaleDateString('fr-FR')}</p>
-                <p><strong>Description:</strong> {formulaire.description}</p>
-                {formulaire.photos_count > 0 && (
-                  <p><strong>Photos:</strong> {formulaire.photos_count} photo(s) attachée(s)</p>
-                )}
+              <div className="detail-item-full">
+                <strong>Type de déchets:</strong> {formulaire.type_dechets}
               </div>
+              <div className="detail-item-full">
+                <strong>Description:</strong> {formulaire.description}
+              </div>
+              <div className="detail-item-full">
+                <strong>Mode de collecte:</strong> 
+                {formulaire.mode_collecte === 'domicile' ? 'Collecte à domicile' : 'Apport volontaire'}
+              </div>
+              <div className="detail-item-full">
+                <strong>Date souhaitée:</strong> 
+                {new Date(formulaire.date_souhaitee).toLocaleDateString('fr-FR')}
+              </div>
+              {formulaire.quantite_estimee && (
+                <div className="detail-item-full">
+                  <strong>Quantité estimée:</strong> {formulaire.quantite_estimee}
+                </div>
+              )}
+              {formulaire.creneau_horaire && (
+                <div className="detail-item-full">
+                  <strong>Créneau horaire:</strong> {formulaire.creneau_horaire}
+                </div>
+              )}
+            </div>
+          </div>
 
-              <div className="formulaire-actions">
-                <button className="action-btn secondary">
-                  Voir détails
-                </button>
-                {formulaire.statut === 'VALIDE' && (
-                  <button 
-                    className="action-btn primary"
-                    onClick={() => {/* TODO: Voir la collecte associée */}}
-                  >
-                    Voir collecte
-                  </button>
-                )}
+          {formulaire.mode_collecte === 'domicile' && formulaire.adresse_collecte && (
+            <div className="detail-section">
+              <h4>Adresse de collecte</h4>
+              <p>{formulaire.adresse_collecte}</p>
+            </div>
+          )}
+
+          {formulaire.instructions_speciales && (
+            <div className="detail-section">
+              <h4>Instructions spéciales</h4>
+              <p>{formulaire.instructions_speciales}</p>
+            </div>
+          )}
+
+          {formulaire.photos && formulaire.photos.length > 0 && (
+            <div className="detail-section">
+              <h4>Photos</h4>
+              <div className="photos-grid">
+                {formulaire.photos.map((photo, index) => (
+                  <img key={index} src={photo} alt={`Photo ${index + 1}`} className="detail-photo" />
+                ))}
               </div>
             </div>
-          ))}
+          )}
+
+          <div className="detail-section">
+            <h4>Dates importantes</h4>
+            <div className="detail-grid">
+              <div className="detail-item-full">
+                <strong>Créé le:</strong> {new Date(formulaire.date_creation).toLocaleString('fr-FR')}
+              </div>
+              {formulaire.date_modification && (
+                <div className="detail-item-full">
+                  <strong>Modifié le:</strong> {new Date(formulaire.date_modification).toLocaleString('fr-FR')}
+                </div>
+              )}
+              {formulaire.date_traitement && (
+                <div className="detail-item-full">
+                  <strong>Traité le:</strong> {new Date(formulaire.date_traitement).toLocaleString('fr-FR')}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      ) : (
-        <div className="empty-state">
-          <div className="empty-icon">📄</div>
-          <h3>Aucun formulaire</h3>
-          <p>Vous n'avez pas encore envoyé de demande de collecte.</p>
+
+        <div className="modal-footer">
+          <button onClick={onClose} className="modal-btn secondary">Fermer</button>
         </div>
-      )}
+      </div>
     </div>
   );
 };
