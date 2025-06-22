@@ -184,6 +184,42 @@ input:focus, textarea:focus, select:focus {
   font-size: 0.875rem;
   font-weight: 500;
 }
+.badge-transporteur {
+  background-color: var(--eco-green-10); /* Light green */
+  color: var(--eco-green);               /* #10b981 */
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.badge-technicien {
+  background-color: var(--eco-purple-10); /* Light violet */
+  color: var(--eco-purple);               /* #8b5cf6 */
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.badge-administrateur {
+  background-color: var(--eco-red-10); /* Light red */
+  color: var(--eco-red);               /* #ef4444 */
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.badge-responsable-logistique {
+  background-color: var(--eco-indigo-10); /* Light indigo */
+  color: var(--eco-indigo);               /* #6366f1 */
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
 
 
 

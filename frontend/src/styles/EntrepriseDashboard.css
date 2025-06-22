@@ -1,0 +1,798 @@
+/* EntrepriseDashboard.css - Styles spécifiques entreprise SANS conflits */
+
+/* Utilise les variables existantes du projet */
+/* Ajoute seulement les classes spécifiques entreprise */
+
+/* Layout spécifique entreprise - modifie la structure dashboard existante */
+.entreprise-dashboard {
+  min-height: 100vh;
+  background-color: var(--eco-gray);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header entreprise - utilise les styles existants avec modifications */
+.entreprise-header {
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.entreprise-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.entreprise-header-left {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.entreprise-logo {
+  font-size: 1.75rem;
+  font-weight: bold;
+  color: var(--eco-green);
+  margin: 0;
+}
+
+.entreprise-user-badge {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.entreprise-user-role {
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #fef3c7;
+  color: #d97706;
+  border: 1px solid #fbbf24;
+}
+
+.entreprise-user-name {
+  color: var(--eco-dark);
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+/* Navigation horizontale entreprise */
+.entreprise-nav {
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.entreprise-nav-content {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  overflow-x: auto;
+}
+
+.entreprise-nav-btn {
+  padding: 1rem 1.5rem;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  white-space: nowrap;
+  border-bottom: 3px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.entreprise-nav-btn:hover {
+  color: var(--eco-green);
+  background-color: var(--eco-green-10);
+}
+
+.entreprise-nav-btn.active {
+  color: var(--eco-green);
+  border-bottom-color: var(--eco-green);
+  background-color: var(--eco-green-10);
+}
+
+/* Contenu principal entreprise */
+.entreprise-main {
+  flex: 1;
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Section d'accueil entreprise */
+.entreprise-welcome {
+  margin-bottom: 2rem;
+  text-align: center;
+  padding: 2rem;
+  background: linear-gradient(135deg, var(--eco-green), var(--eco-blue));
+  color: white;
+  border-radius: 1.5rem;
+  box-shadow: 0 8px 32px rgba(87, 138, 49, 0.3);
+}
+
+.entreprise-welcome h2 {
+  font-size: 2.25rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.entreprise-welcome p {
+  font-size: 1.125rem;
+  opacity: 0.9;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* Grille de stats entreprise */
+.entreprise-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.entreprise-stat-card {
+  background: white;
+  padding: 2rem;
+  border-radius: 1.25rem;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.entreprise-stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+}
+
+.entreprise-stat-card.primary {
+  border-left: 4px solid #3b82f6;
+}
+
+.entreprise-stat-card.warning {
+  border-left: 4px solid #f59e0b;
+}
+
+.entreprise-stat-card.info {
+  border-left: 4px solid #06b6d4;
+}
+
+.entreprise-stat-card.success {
+  border-left: 4px solid #10b981;
+}
+
+.entreprise-stat-icon {
+  font-size: 2.5rem;
+  opacity: 0.8;
+}
+
+.entreprise-stat-content h3 {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: var(--eco-dark);
+  margin: 0 0 0.25rem 0;
+}
+
+.entreprise-stat-content p {
+  color: #6b7280;
+  font-size: 0.95rem;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Actions rapides entreprise */
+.entreprise-actions {
+  margin-bottom: 3rem;
+}
+
+.entreprise-actions h3 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--eco-dark);
+  margin-bottom: 1.5rem;
+}
+
+.entreprise-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.entreprise-action-card {
+  background: white;
+  padding: 2rem;
+  border-radius: 1.25rem;
+  border: 2px solid #e5e7eb;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.entreprise-action-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+}
+
+.entreprise-action-card.nouvelle-demande {
+  border-color: var(--eco-green);
+  background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+}
+
+.entreprise-action-card.nouvelle-demande:hover {
+  border-color: #059669;
+  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+}
+
+.entreprise-action-card.planning {
+  border-color: #3b82f6;
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+}
+
+.entreprise-action-card.planning:hover {
+  border-color: #2563eb;
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+}
+
+.entreprise-action-card.suivi {
+  border-color: #f59e0b;
+  background: linear-gradient(135deg, #fffbeb, #fef3c7);
+}
+
+.entreprise-action-card.suivi:hover {
+  border-color: #d97706;
+  background: linear-gradient(135deg, #fef3c7, #fed7aa);
+}
+
+.entreprise-action-icon {
+  font-size: 3rem;
+  opacity: 0.8;
+}
+
+.entreprise-action-card h4 {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: var(--eco-dark);
+  margin: 0;
+}
+
+.entreprise-action-card p {
+  color: #6b7280;
+  font-size: 0.95rem;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Activité récente entreprise */
+.entreprise-activity h3 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--eco-dark);
+  margin-bottom: 1.5rem;
+}
+
+.entreprise-activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.entreprise-activity-item {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.entreprise-activity-item:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateX(4px);
+}
+
+.entreprise-activity-info h4 {
+  font-weight: 600;
+  color: var(--eco-dark);
+  margin: 0 0 0.25rem 0;
+}
+
+.entreprise-activity-date {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.entreprise-activity-status {
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+}
+
+.status-en_attente {
+  background-color: #f59e0b;
+}
+
+.status-valide {
+  background-color: #10b981;
+}
+
+.status-terminee {
+  background-color: #059669;
+}
+
+.status-soumis {
+  background-color: #6b7280;
+}
+
+.status-rejete {
+  background-color: #ef4444;
+}
+
+.status-en_cours {
+  background-color: #3b82f6;
+}
+
+.status-planifiee {
+  background-color: #06b6d4;
+}
+
+.status-annulee {
+  background-color: #9ca3af;
+}
+
+/* Formulaire entreprise */
+.entreprise-formulaire {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.entreprise-form-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.entreprise-form-header h2 {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: var(--eco-dark);
+  margin-bottom: 1rem;
+}
+
+.entreprise-form-header p {
+  color: #6b7280;
+  font-size: 1.125rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.entreprise-form {
+  background: white;
+  padding: 3rem;
+  border-radius: 1.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+}
+
+/* Sections du formulaire entreprise */
+.entreprise-form-section {
+  margin-bottom: 3rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.entreprise-form-section:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.entreprise-form-section h3 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--eco-dark);
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Groupes de formulaire entreprise - utilisent form-group existant mais avec préfixe */
+.entreprise-form-group {
+  margin-bottom: 1.5rem;
+}
+
+.entreprise-form-group label {
+  display: block;
+  font-weight: 600;
+  color: var(--eco-dark);
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.entreprise-form-group input,
+.entreprise-form-group select,
+.entreprise-form-group textarea {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.75rem;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.entreprise-form-group input:focus,
+.entreprise-form-group select:focus,
+.entreprise-form-group textarea:focus {
+  outline: none;
+  border-color: var(--eco-green);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.entreprise-form-group small {
+  display: block;
+  color: #6b7280;
+  font-size: 0.825rem;
+  margin-top: 0.25rem;
+}
+
+.entreprise-form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.entreprise-form-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f0fdf4;
+  color: #059669;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  border: 1px solid #bbf7d0;
+  width: 100%;
+  justify-content: center;
+}
+
+/* Upload photos entreprise */
+.entreprise-photos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.entreprise-photo-upload {
+  position: relative;
+}
+
+.entreprise-photo-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.entreprise-photo-label {
+  display: block;
+  aspect-ratio: 1;
+  border: 2px dashed #d1d5db;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.entreprise-photo-label:hover {
+  border-color: var(--eco-green);
+  background-color: var(--eco-green-10);
+}
+
+.entreprise-photo-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.entreprise-photo-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 0.5rem;
+  color: #6b7280;
+}
+
+.entreprise-photo-icon {
+  font-size: 2rem;
+  opacity: 0.6;
+}
+
+/* Bouton submit entreprise */
+.entreprise-submit-btn {
+  background: linear-gradient(135deg, var(--eco-green), #059669);
+  color: white;
+  padding: 1rem 3rem;
+  border: none;
+  border-radius: 0.75rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 200px;
+  justify-content: center;
+}
+
+.entreprise-submit-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #059669, #047857);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
+}
+
+.entreprise-submit-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Alertes entreprise */
+.entreprise-error-alert {
+  background: #fef2f2;
+  color: #dc2626;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid #fecaca;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.entreprise-error-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+/* États de succès entreprise */
+.entreprise-success-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: white;
+  border-radius: 1.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.entreprise-success-icon {
+  font-size: 5rem;
+  margin-bottom: 2rem;
+}
+
+.entreprise-success-state h3 {
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--eco-green);
+  margin-bottom: 1rem;
+}
+
+.entreprise-success-state p {
+  color: #6b7280;
+  font-size: 1.125rem;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+/* Placeholders entreprise */
+.entreprise-placeholder {
+  text-align: center;
+  padding: 3rem 2rem;
+}
+
+.entreprise-placeholder h2 {
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--eco-dark);
+  margin-bottom: 1rem;
+}
+
+.entreprise-placeholder > p {
+  color: #6b7280;
+  font-size: 1.125rem;
+  margin-bottom: 2rem;
+}
+
+.entreprise-placeholder-content {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.entreprise-placeholder-card {
+  background: white;
+  padding: 3rem;
+  border-radius: 1.5rem;
+  border: 2px dashed #d1d5db;
+  text-align: center;
+}
+
+.entreprise-placeholder-card h3 {
+  color: var(--eco-dark);
+  margin-bottom: 1rem;
+}
+
+.entreprise-placeholder-card p {
+  color: #6b7280;
+  margin: 0;
+}
+
+/* États vides entreprise */
+.entreprise-empty-state {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: white;
+  border-radius: 1rem;
+  border: 2px dashed #d1d5db;
+}
+
+.entreprise-empty-state p {
+  color: #6b7280;
+  margin-bottom: 1.5rem;
+}
+
+.entreprise-empty-state-button {
+  background: var(--eco-green);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.3s ease;
+}
+
+.entreprise-empty-state-button:hover {
+  background: #059669;
+}
+
+/* Responsive pour entreprise */
+@media (max-width: 1024px) {
+  .entreprise-header-content,
+  .entreprise-nav-content,
+  .entreprise-main {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .entreprise-stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+  
+  .entreprise-actions-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .entreprise-header-content {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+  
+  .entreprise-user-badge {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .entreprise-nav-content {
+    justify-content: center;
+  }
+  
+  .entreprise-nav-btn {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+  }
+  
+  .entreprise-main {
+    padding: 1rem;
+  }
+  
+  .entreprise-welcome {
+    padding: 1.5rem;
+  }
+  
+  .entreprise-welcome h2 {
+    font-size: 1.75rem;
+  }
+  
+  .entreprise-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .entreprise-stat-card {
+    padding: 1.5rem;
+  }
+  
+  .entreprise-form {
+    padding: 2rem;
+  }
+  
+  .entreprise-form-grid-2 {
+    grid-template-columns: 1fr;
+  }
+  
+  .entreprise-form-header h2 {
+    font-size: 2rem;
+  }
+  
+  .entreprise-activity-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .entreprise-photos-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .entreprise-submit-btn {
+    width: 100%;
+    padding: 1rem;
+  }
+}
+
+/* Animations entreprise */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.entreprise-stat-card,
+.entreprise-action-card,
+.entreprise-activity-item {
+  animation: fadeInUp 0.3s ease-out;
+}
