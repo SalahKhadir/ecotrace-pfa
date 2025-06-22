@@ -1,0 +1,532 @@
+/* Variables CSS pour la palette EcoTrace */
+:root {
+  --eco-green: #578A31;
+  --eco-blue: #002E50;
+  --eco-yellow: #FBC02D;
+  --eco-gray: #F5F5F5;
+  --eco-dark: #212121;
+  
+  --eco-green-light: #6fa93f;
+  --eco-green-dark: #456b27;
+  --eco-blue-light: #1a4a73;
+  --eco-blue-dark: #001a33;
+  --eco-yellow-light: #fcd966;
+  --eco-yellow-dark: #e6ac26;
+  
+  --eco-green-10: rgba(87, 138, 49, 0.1);
+  --eco-green-20: rgba(87, 138, 49, 0.2);
+  --eco-blue-10: rgba(0, 46, 80, 0.1);
+  --eco-blue-20: rgba(0, 46, 80, 0.2);
+  --eco-yellow-10: rgba(251, 192, 45, 0.1);
+  --eco-yellow-20: rgba(251, 192, 45, 0.2);
+}
+
+/* IMPORTANT: Reset complet pour occuper toute la largeur */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: var(--eco-gray);
+  color: var(--eco-dark);
+  line-height: 1.5;
+}
+
+/* Container principal React */
+#root {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+/* App container */
+.App {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+/* Page d'accueil - PLEINE LARGEUR */
+.home-container {
+  width: 100%;
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--eco-green) 0%, var(--eco-blue) 100%);
+  margin: 0;
+  padding: 0;
+}
+
+.home-header {
+  width: 100%;
+  background: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  margin: 0;
+  padding: 0;
+}
+
+.home-nav {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.home-logo {
+  display: flex;
+  align-items: center;
+}
+
+.home-title {
+  font-size: 1.875rem;
+  font-weight: bold;
+  color: var(--eco-dark);
+}
+
+.home-subtitle {
+  margin-left: 0.75rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.home-login-btn {
+  background-color: var(--eco-green);
+  color: white;
+  padding: 0.5rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 14px rgba(87, 138, 49, 0.2);
+}
+
+.home-login-btn:hover {
+  background-color: var(--eco-green-light);
+  color: white;
+  transform: translateY(-1px);
+}
+
+/* Hero section */
+.hero-section {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 3rem 1rem;
+  text-align: center;
+}
+
+.hero-title {
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: bold;
+  color: white;
+  margin-bottom: 1.5rem;
+  line-height: 1.1;
+}
+
+.hero-highlight {
+  color: var(--eco-yellow);
+}
+
+.hero-description {
+  font-size: 1.25rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0 auto 3rem auto;
+  max-width: 48rem;
+  line-height: 1.6;
+}
+
+.hero-cta-btn {
+  background: white;
+  color: var(--eco-blue);
+  padding: 1rem 2rem;
+  border-radius: 0.5rem;
+  font-weight: bold;
+  font-size: 1.125rem;
+  text-decoration: none;
+  display: inline-block;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.hero-cta-btn:hover {
+  background: var(--eco-gray);
+  color: var(--eco-blue);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+}
+
+/* Section des rôles */
+.roles-section {
+  width: 100%;
+  margin-top: 5rem;
+  padding: 0 1rem;
+}
+
+.roles-title {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: bold;
+  color: white;
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.roles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.role-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  color: white;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.role-card:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.role-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.role-title {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin-bottom: 0.75rem;
+}
+
+.role-features {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.8);
+  list-style: none;
+  padding: 0;
+}
+
+.role-features li {
+  margin-bottom: 0.5rem;
+}
+
+/* Section des fonctionnalités */
+.features-section {
+  width: 100%;
+  margin-top: 5rem;
+  text-align: center;
+  padding: 0 1rem;
+}
+
+.features-title {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: bold;
+  color: white;
+  margin-bottom: 3rem;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.feature-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px);
+  border-radius: 1rem;
+  padding: 2rem;
+  color: white;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.feature-card:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.feature-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.feature-title {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin-bottom: 0.75rem;
+}
+
+.feature-description {
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.6;
+}
+
+/* Footer */
+.home-footer {
+  width: 100%;
+  background-color: var(--eco-dark);
+  color: white;
+  padding: 2rem 0;
+  margin-top: 5rem;
+}
+
+.footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  text-align: center;
+}
+
+.footer-text {
+  color: #9ca3af;
+}
+
+/* Page de login - PLEINE LARGEUR */
+.login-container {
+  width: 100%;
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--eco-green) 0%, var(--eco-blue) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  margin: 0;
+}
+
+.login-card {
+  max-width: 28rem;
+  width: 100%;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.login-logo {
+  display: inline-block;
+  text-decoration: none;
+}
+
+.login-title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: white;
+  margin-bottom: 0.5rem;
+}
+
+.login-subtitle {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: white;
+}
+
+.login-description {
+  margin-top: 0.5rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.login-form-container {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px);
+  border-radius: 1rem;
+  padding: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: white;
+  margin-bottom: 0.5rem;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 0.5rem;
+  color: white;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+}
+
+.form-input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.login-submit-btn {
+  width: 100%;
+  background: white;
+  color: var(--eco-blue);
+  font-weight: bold;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+}
+
+.login-submit-btn:hover:not(:disabled) {
+  background: var(--eco-gray);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+}
+
+.login-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.login-back-link {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+.login-back-link a {
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.login-back-link a:hover {
+  color: white;
+}
+
+/* Test accounts */
+.test-accounts {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.test-accounts-title {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.test-accounts-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.test-account-item {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.test-account-role {
+  color: rgba(255, 255, 255, 0.6);
+  min-width: 70px;
+}
+
+.test-account-credentials {
+  color: white;
+  flex: 1;
+}
+
+/* Classes utilitaires */
+.error {
+  color: #fee;
+  background-color: rgba(220, 38, 38, 0.2);
+  border: 1px solid rgba(220, 38, 38, 0.5);
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .home-nav {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  
+  .hero-section {
+    padding: 2rem 1rem;
+  }
+  
+  .roles-grid,
+  .features-grid {
+    grid-template-columns: 1fr;
+    margin: 0 1rem;
+  }
+  
+  .roles-section,
+  .features-section {
+    padding: 0;
+  }
+  
+  .login-container {
+    padding: 1rem;
+  }
+  
+  .login-card {
+    margin: 0;
+    max-width: 100%;
+  }
+  
+  .test-account-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+}

@@ -1,10 +1,167 @@
+
 @import "tailwindcss";
 
-body {
+/* Import de la palette de couleurs personnalisée */
+@import './styles/colors.css';
+
+/* Styles globaux */
+* {
   margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+#root {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-x: hidden !important;
+}
+
+body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: var(--eco-gray);
+  color: var(--eco-dark);
+}
+
+/* Styles pour les liens */
+a {
+  color: var(--eco-green);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: var(--eco-green-light);
+}
+
+/* Styles pour les inputs */
+input, textarea, select {
+  font-family: inherit;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--eco-green-20);
+  border-color: var(--eco-green);
+}
+
+/* Classes utilitaires pour les animations */
+.animate-pulse-eco {
+  animation: pulse-eco 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-eco {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Spinner personnalisé avec les couleurs EcoTrace */
+.spinner-eco {
+  border: 3px solid var(--eco-gray);
+  border-top: 3px solid var(--eco-green);
+  border-radius: 50%;
+  width: 2rem;
+  height: 2rem;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Classes pour les états */
+.success {
+  color: var(--eco-green);
+  background-color: var(--eco-green-10);
+  border: 1px solid var(--eco-green);
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+}
+
+.warning {
+  color: var(--eco-dark);
+  background-color: var(--eco-yellow-10);
+  border: 1px solid var(--eco-yellow);
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+}
+
+.error {
+  color: #dc2626;
+  background-color: rgba(220, 38, 38, 0.1);
+  border: 1px solid #dc2626;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+}
+
+.info {
+  color: var(--eco-blue);
+  background-color: var(--eco-blue-10);
+  border: 1px solid var(--eco-blue);
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .card-eco {
+    padding: 1rem;
+  }
+  
+  .btn-eco-primary,
+  .btn-eco-secondary,
+  .btn-eco-accent {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* Classes utilitaires pour les layouts */
+.container-eco {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.grid-eco-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.grid-eco-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }

@@ -49,32 +49,32 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-eco-blue to-eco-green flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="login-container">
+      <div className="login-card">
         {/* Header */}
-        <div className="text-center">
-          <Link to="/" className="inline-block">
-            <h1 className="text-4xl font-bold text-white mb-2">🌱 EcoTrace</h1>
+        <div className="login-header">
+          <Link to="/" className="login-logo">
+            <h1 className="login-title">🌱 EcoTrace</h1>
           </Link>
-          <h2 className="text-2xl font-bold text-white">
+          <h2 className="login-subtitle">
             Connexion à votre compte
           </h2>
-          <p className="mt-2 text-white/80">
+          <p className="login-description">
             Accédez à votre interface personnalisée
           </p>
         </div>
 
         {/* Formulaire */}
-        <div className="bg-white/10 backdrop-blur-md rounded-xl p-8">
-          <form className="space-y-6" onSubmit={handleSubmit}>
+        <div className="login-form-container">
+          <form className="login-form" onSubmit={handleSubmit}>
             {error && (
-              <div className="bg-red-500/20 border border-red-500/50 text-white px-4 py-3 rounded-lg">
+              <div className="error">
                 {error}
               </div>
             )}
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-white mb-2">
+            <div className="form-group">
+              <label htmlFor="email" className="form-label">
                 Adresse email
               </label>
               <input
@@ -84,13 +84,13 @@ const LoginPage = () => {
                 required
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-3 py-3 bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent"
+                className="form-input"
                 placeholder="votre@email.com"
               />
             </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-white mb-2">
+            <div className="form-group">
+              <label htmlFor="password" className="form-label">
                 Mot de passe
               </label>
               <input
@@ -100,7 +100,7 @@ const LoginPage = () => {
                 required
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full px-3 py-3 bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent"
+                className="form-input"
                 placeholder="••••••••"
               />
             </div>
@@ -108,38 +108,35 @@ const LoginPage = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-white text-eco-blue hover:bg-gray-100 font-bold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="login-submit-btn"
             >
               {loading ? 'Connexion...' : 'Se connecter'}
             </button>
           </form>
 
           {/* Comptes de test */}
-          <div className="mt-8 pt-6 border-t border-white/20">
-            <p className="text-white/80 text-sm mb-4">Comptes de test :</p>
-            <div className="grid grid-cols-1 gap-2 text-xs">
-              <div className="bg-white/10 p-2 rounded">
-                <span className="text-white/60">Particulier:</span>
-                <span className="text-white ml-1">particulier@test.com / test123</span>
+          <div className="test-accounts">
+            <p className="test-accounts-title">Comptes de test :</p>
+            <div className="test-accounts-grid">
+              <div className="test-account-item">
+                <span className="test-account-role">Particulier:</span>
+                <span className="test-account-credentials">particulier@test.com / test123</span>
               </div>
-              <div className="bg-white/10 p-2 rounded">
-                <span className="text-white/60">Entreprise:</span>
-                <span className="text-white ml-1">entreprise@test.com / test123</span>
+              <div className="test-account-item">
+                <span className="test-account-role">Entreprise:</span>
+                <span className="test-account-credentials">entreprise@test.com / test123</span>
               </div>
-              <div className="bg-white/10 p-2 rounded">
-                <span className="text-white/60">Admin:</span>
-                <span className="text-white ml-1">admin@test.com / test123</span>
+              <div className="test-account-item">
+                <span className="test-account-role">Admin:</span>
+                <span className="test-account-credentials">admin@test.com / test123</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Retour à l'accueil */}
-        <div className="text-center">
-          <Link 
-            to="/" 
-            className="text-white/80 hover:text-white transition-colors"
-          >
+        <div className="login-back-link">
+          <Link to="/">
             ← Retour à l'accueil
           </Link>
         </div>
