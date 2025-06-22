@@ -7,7 +7,7 @@ import LoginPage from './pages/auth/LoginPage';
 // Dashboards
 import ParticulierDashboard from './pages/particulier/ParticulierDashboard';
 import EntrepriseDashboard from './pages/entreprise/EntrepriseDashboard';
-// import TransporteurDashboard from './pages/transporteur/TransporteurDashboard';
+import TransporteurDashboard from './pages/transporteur/TransporteurDashboard';
 // import TechnicienDashboard from './pages/technicien/TechnicienDashboard';
 // import AdministrateurDashboard from './pages/administrateur/AdministrateurDashboard';
 // import ResponsableLogistiqueDashboard from './pages/responsable-logistique/ResponsableLogistiqueDashboard';
@@ -89,9 +89,6 @@ function App() {
               </ProtectedRoute>
             } 
           />
-
-          {/* 
-          Routes à décommenter quand vous créerez les autres dashboards :
           
           <Route 
             path="/dashboard/transporteur" 
@@ -101,7 +98,7 @@ function App() {
               </ProtectedRoute>
             } 
           />
-
+{/* 
           <Route 
             path="/dashboard/technicien" 
             element={
@@ -127,8 +124,8 @@ function App() {
                 <ResponsableLogistiqueDashboard />
               </ProtectedRoute>
             } 
-          />
-          */}
+          /> */}
+         
 
           {/* Route par défaut - redirection */}
           <Route path="*" element={<Navigate to="/" replace />} />

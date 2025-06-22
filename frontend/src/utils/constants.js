@@ -44,3 +44,21 @@ export const WASTE_TYPES = {
   A_RECYCLER: 'A_RECYCLER',
   DETRUIT: 'DETRUIT'
 };
+
+// Labels des statuts pour l'affichage
+export const STATUS_LABELS = {
+  [COLLECTE_STATUS.PLANIFIEE]: 'Planifiée',
+  [COLLECTE_STATUS.EN_COURS]: 'En cours',
+  [COLLECTE_STATUS.TERMINEE]: 'Terminée',
+  [COLLECTE_STATUS.ANNULEE]: 'Annulée'
+};
+
+// Couleurs par rôle (pour les badges)
+export const ROLE_COLORS = {
+  [USER_ROLES.PARTICULIER]: '#3b82f6',      // Bleu
+  [USER_ROLES.ENTREPRISE]: '#f59e0b',       // Orange  
+  [USER_ROLES.TRANSPORTEUR]: '#10b981',     // Vert
+  [USER_ROLES.TECHNICIEN]: '#8b5cf6',       // Violet
+  [USER_ROLES.ADMINISTRATEUR]: '#ef4444',   // Rouge
+  [USER_ROLES.RESPONSABLE_LOGISTIQUE]: '#6366f1'  // Indigo
+};

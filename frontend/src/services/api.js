@@ -26,14 +26,42 @@ api.interceptors.request.use(
 // Intercepteur pour gérer les erreurs de réponse
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Token expiré, rediriger vers login
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('userRole');
-      window.location.href = '/login';
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      // Essayer de rafraîchir le token
+      const refreshToken = localStorage.getItem('refreshToken');
+      if (refreshToken) {
+        try {
+          const response = await axios.post(`${API_BASE_URL}/auth/token/refresh/`, {
+            refresh: refreshToken
+          });
+          
+          const newAccessToken = response.data.access;
+          localStorage.setItem('accessToken', newAccessToken);
+          
+          // Refaire la requête originale avec le nouveau token
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+          return api(originalRequest);
+        } catch (refreshError) {
+          // Le refresh a échoué, rediriger vers login
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          localStorage.removeItem('userRole');
+          window.location.href = '/login';
+        }
+      } else {
+        // Pas de refresh token, rediriger vers login
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('userRole');
+        window.location.href = '/login';
+      }
     }
+    
     return Promise.reject(error);
   }
 );
@@ -41,23 +69,43 @@ api.interceptors.response.use(
 // Services d'authentification
 export const authService = {
   login: async (email, password) => {
-    const response = await api.post('/auth/login/', { email, password });
-    return response.data;
+    try {
+      const response = await api.post('/auth/login/', { 
+        email, 
+        password 
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Erreur de connexion:', error.response?.data);
+      throw error;
+    }
   },
   
   logout: async () => {
-    const refreshToken = localStorage.getItem('refreshToken');
-    if (refreshToken) {
-      await api.post('/auth/logout/', { refresh: refreshToken });
+    try {
+      const refreshToken = localStorage.getItem('refreshToken');
+      if (refreshToken) {
+        await api.post('/auth/logout/', { refresh: refreshToken });
+      }
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error);
+    } finally {
+      // Toujours nettoyer le localStorage
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('userInfo');
     }
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('userRole');
   },
   
   refreshToken: async () => {
     const refreshToken = localStorage.getItem('refreshToken');
     const response = await api.post('/auth/token/refresh/', { refresh: refreshToken });
+    return response.data;
+  },
+
+  register: async (userData) => {
+    const response = await api.post('/auth/register/', userData);
     return response.data;
   }
 };
@@ -65,48 +113,129 @@ export const authService = {
 // Services utilisateur
 export const userService = {
   getProfile: async () => {
-    const response = await api.get('/users/profile/');
+    const response = await api.get('/profile/');
     return response.data;
   },
   
   updateProfile: async (userData) => {
-    const response = await api.put('/users/profile/', userData);
+    const response = await api.put('/profile/', userData);
+    return response.data;
+  },
+
+  getDashboardInfo: async () => {
+    const response = await api.get('/dashboard-info/');
+    return response.data;
+  },
+
+  checkDashboardAccess: async (dashboardType) => {
+    const response = await api.get(`/dashboard-access/${dashboardType}/`);
+    return response.data;
+  },
+
+  getAllUsers: async () => {
+    const response = await api.get('/users/');
     return response.data;
   }
 };
 
-// Services de gestion des déchets
+// Services de gestion des déchets (NOUVEAUX)
 export const wasteService = {
   // Formulaires de collecte
-  createCollectForm: async (formData) => {
-    const response = await api.post('/waste/collect-forms/', formData);
+  createFormulaireCollecte: async (formData) => {
+    // Créer FormData pour supporter les fichiers
+    const form = new FormData();
+    
+    // Ajouter tous les champs du formulaire
+    Object.keys(formData).forEach(key => {
+      if (formData[key] !== null && formData[key] !== undefined && formData[key] !== '') {
+        if (key.startsWith('photo') && formData[key] instanceof File) {
+          form.append(key, formData[key]);
+        } else {
+          form.append(key, formData[key]);
+        }
+      }
+    });
+
+    const response = await api.post('/waste/formulaires/', form, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   },
   
-  getCollectForms: async () => {
-    const response = await api.get('/waste/collect-forms/');
+  getFormulaireCollecte: async (id) => {
+    const response = await api.get(`/waste/formulaires/${id}/`);
+    return response.data;
+  },
+  
+  getMesFormulaires: async () => {
+    const response = await api.get('/waste/formulaires/mes_formulaires/');
+    return response.data;
+  },
+  
+  getAllFormulaires: async () => {
+    const response = await api.get('/waste/formulaires/');
+    return response.data;
+  },
+  
+  validerFormulaire: async (id, data = {}) => {
+    const response = await api.post(`/waste/formulaires/${id}/valider/`, data);
+    return response.data;
+  },
+  
+  rejeterFormulaire: async (id, raison) => {
+    const response = await api.post(`/waste/formulaires/${id}/rejeter/`, { raison });
     return response.data;
   },
   
   // Collectes
-  getCollectes: async () => {
+  getCollecte: async (id) => {
+    const response = await api.get(`/waste/collectes/${id}/`);
+    return response.data;
+  },
+  
+  getMesCollectes: async () => {
+    const response = await api.get('/waste/collectes/mes_collectes/');
+    return response.data;
+  },
+  
+  getAllCollectes: async () => {
     const response = await api.get('/waste/collectes/');
     return response.data;
   },
   
-  updateCollecte: async (id, data) => {
-    const response = await api.put(`/waste/collectes/${id}/`, data);
+  assignerTransporteur: async (collecteId, transporteurId = null) => {
+    const data = transporteurId ? { transporteur_id: transporteurId } : {};
+    const response = await api.post(`/waste/collectes/${collecteId}/assigner_transporteur/`, data);
+    return response.data;
+  },
+  
+  changerStatutCollecte: async (collecteId, statut) => {
+    const response = await api.post(`/waste/collectes/${collecteId}/changer_statut/`, { statut });
     return response.data;
   },
   
   // Déchets
-  getWastes: async () => {
-    const response = await api.get('/waste/wastes/');
+  getAllDechets: async () => {
+    const response = await api.get('/waste/dechets/');
     return response.data;
   },
   
-  validateWaste: async (id, data) => {
-    const response = await api.post(`/waste/wastes/${id}/validate/`, data);
+  valoriserDechet: async (dechetId, etat) => {
+    const response = await api.post(`/waste/dechets/${dechetId}/valoriser/`, { etat });
+    return response.data;
+  },
+  
+  // Statistiques
+  getDashboardStats: async () => {
+    const response = await api.get('/waste/dashboard-stats/');
+    return response.data;
+  },
+  
+  // Points de collecte
+  getPointsCollecte: async () => {
+    const response = await api.get('/waste/points-collecte/');
     return response.data;
   }
 };

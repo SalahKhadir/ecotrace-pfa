@@ -165,3 +165,55 @@ input:focus, textarea:focus, select:focus {
   align-items: center;
   justify-content: space-between;
 }
+
+/* Badge pour les rôles */
+.badge-particulier {
+  background-color: var(--eco-blue-10);
+  color: var(--eco-blue);
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.badge-entreprise {
+  background-color: var(--eco-yellow-10);
+  color: var(--eco-dark);
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+
+
+
+
+
+/* Styles pour les comptes de test cliquables */
+.test-account-item {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.test-account-item:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateX(4px);
+}
+
+.spinner-eco {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-right: 0.5rem;
+}
