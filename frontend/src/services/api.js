@@ -135,7 +135,12 @@ export const userService = {
   getAllUsers: async () => {
     const response = await api.get('/users/');
     return response.data;
-  }
+  },
+  
+  getDashboardInfo: async () => {
+    const response = await api.get('/users/dashboard-info/');
+    return response.data;
+  },
 };
 
 // Services de gestion des déchets (NOUVEAUX)
@@ -237,7 +242,19 @@ export const wasteService = {
   getPointsCollecte: async () => {
     const response = await api.get('/waste/points-collecte/');
     return response.data;
-  }
+  },
+
+  // Créer une collecte
+  createCollecte: async (collecteData) => {
+    const response = await api.post('/waste/collectes/', collecteData);
+    return response.data;
+  },
+
+  // Obtenir un utilisateur courant (pour remplacer authService.getCurrentUser)
+  getCurrentUser: async () => {
+    const response = await api.get('/users/dashboard-info/');
+    return response.data;
+  },
 };
 
 export default api;

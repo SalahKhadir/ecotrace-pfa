@@ -291,19 +291,24 @@ class CollecteListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Collecte
         fields = [
-            'id', 'reference', 'utilisateur_nom', 'date_collecte', 'mode_collecte',
-            'statut', 'transporteur_nom', 'created_at'
+            'id', 'reference', 'utilisateur_nom', 'transporteur_nom',
+            'date_collecte', 'statut', 'mode_collecte', 'adresse',
+            'created_at'
         ]
     
     def get_utilisateur_nom(self, obj):
         """Nom de l'utilisateur"""
-        return obj.utilisateur.get_full_name() or obj.utilisateur.username
+        if obj.utilisateur:
+            if obj.utilisateur.company_name:
+                return obj.utilisateur.company_name
+            return f"{obj.utilisateur.first_name} {obj.utilisateur.last_name}".strip() or obj.utilisateur.username
+        return 'N/A'
     
     def get_transporteur_nom(self, obj):
         """Nom du transporteur"""
         if obj.transporteur:
-            return obj.transporteur.get_full_name() or obj.transporteur.username
-        return None
+            return f"{obj.transporteur.first_name} {obj.transporteur.last_name}".strip() or obj.transporteur.username
+        return 'Non assigné'
 
 class DechetSerializer(serializers.ModelSerializer):
     """

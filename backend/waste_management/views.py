@@ -241,6 +241,16 @@ class CollecteViewSet(viewsets.ModelViewSet):
         
         serializer = CollecteListSerializer(collectes, many=True)
         return Response(serializer.data)
+    
+    def create(self, request, *args, **kwargs):
+        """Créer une nouvelle collecte"""
+        if not (request.user.is_administrateur or request.user.is_responsable_logistique):
+            return Response(
+                {'error': 'Permission refusée'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        return super().create(request, *args, **kwargs)
 
 class DechetViewSet(viewsets.ModelViewSet):
     """
@@ -301,13 +311,14 @@ class DechetViewSet(viewsets.ModelViewSet):
 @permission_classes([permissions.IsAuthenticated])
 def dashboard_stats(request):
     """
-    Statistiques pour le dashboard selon le rôle
+    Statistiques pour le tableau de bord selon le rôle
     """
-    user = request.user
+    
     stats = {}
+    user = request.user
     
     if user.is_particulier or user.is_entreprise:
-        # Stats pour particuliers/entreprises
+        # Stats pour particuliers et entreprises
         stats = {
             'formulaires_total': FormulaireCollecte.objects.filter(utilisateur=user).count(),
             'formulaires_en_attente': FormulaireCollecte.objects.filter(
@@ -323,14 +334,19 @@ def dashboard_stats(request):
         }
     
     elif user.is_transporteur:
-        # Stats pour transporteurs
+        # Stats pour transporteurs - CORRIGÉ
         stats = {
-            'collectes_assignees': Collecte.objects.filter(transporteur=user).count(),
-            'collectes_en_cours': Collecte.objects.filter(
-                transporteur=user, statut='EN_COURS'
+            'formulaires_a_verifier': FormulaireCollecte.objects.filter(
+                statut__in=['VALIDE', 'EN_COURS']
             ).count(),
-            'collectes_disponibles': Collecte.objects.filter(
-                transporteur__isnull=True, statut='PLANIFIEE'
+            'collectes_assignees': Collecte.objects.filter(
+                transporteur=user
+            ).count(),
+            'collectes_en_attente': Collecte.objects.filter(
+                transporteur=user, statut='PLANIFIEE'
+            ).count(),
+            'collectes_terminees': Collecte.objects.filter(
+                transporteur=user, statut='TERMINEE'
             ).count(),
         }
     
@@ -344,7 +360,7 @@ def dashboard_stats(request):
         }
     
     elif user.is_administrateur or user.is_responsable_logistique:
-        # Stats pour admins
+        # Stats pour admins et responsables logistique
         stats = {
             'formulaires_total': FormulaireCollecte.objects.count(),
             'formulaires_en_attente': FormulaireCollecte.objects.filter(statut='SOUMIS').count(),
@@ -353,6 +369,9 @@ def dashboard_stats(request):
             'collectes_en_cours': Collecte.objects.filter(statut='EN_COURS').count(),
             'dechets_total': Dechet.objects.count(),
         }
+    
+    else:
+        stats = {}
     
     return Response(stats)
 
