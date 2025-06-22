@@ -8,9 +8,10 @@ import LoginPage from './pages/auth/LoginPage';
 import ParticulierDashboard from './pages/particulier/ParticulierDashboard';
 import EntrepriseDashboard from './pages/entreprise/EntrepriseDashboard';
 import TransporteurDashboard from './pages/transporteur/TransporteurDashboard';
+import ResponsableLogistiqueDashboard from './pages/responsable-logistique/ResponsableLogistiqueDashboard';
+
 // import TechnicienDashboard from './pages/technicien/TechnicienDashboard';
 // import AdministrateurDashboard from './pages/administrateur/AdministrateurDashboard';
-// import ResponsableLogistiqueDashboard from './pages/responsable-logistique/ResponsableLogistiqueDashboard';
 
 import './App.css';
 
@@ -33,7 +34,7 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
 // Composant pour rediriger vers le bon dashboard selon le rôle
 const DashboardRedirect = () => {
   const userRole = localStorage.getItem('userRole');
-  
+
   switch (userRole) {
     case 'PARTICULIER':
       return <Navigate to="/dashboard/particulier" replace />;
@@ -62,44 +63,53 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
 
           {/* Redirection automatique vers le bon dashboard */}
-          <Route 
-            path="/dashboard" 
+          <Route
+            path="/dashboard"
             element={
               <ProtectedRoute>
                 <DashboardRedirect />
               </ProtectedRoute>
-            } 
+            }
           />
 
           {/* Dashboards spécifiques par rôle */}
-          <Route 
-            path="/dashboard/particulier" 
+          <Route
+            path="/dashboard/particulier"
             element={
               <ProtectedRoute requiredRole="PARTICULIER">
                 <ParticulierDashboard />
               </ProtectedRoute>
-            } 
+            }
           />
 
-          <Route 
-            path="/dashboard/entreprise" 
+          <Route
+            path="/dashboard/entreprise"
             element={
               <ProtectedRoute requiredRole="ENTREPRISE">
                 <EntrepriseDashboard />
               </ProtectedRoute>
-            } 
+            }
           />
-          
-          <Route 
-            path="/dashboard/transporteur" 
+
+          <Route
+            path="/dashboard/transporteur"
             element={
               <ProtectedRoute requiredRole="TRANSPORTEUR">
                 <TransporteurDashboard />
               </ProtectedRoute>
-            } 
+            }
           />
-{/* 
-          <Route 
+
+          <Route
+            path="/dashboard/responsable-logistique"
+            element={
+              <ProtectedRoute requiredRole="RESPONSABLE_LOGISTIQUE">
+                <ResponsableLogistiqueDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* <Route 
             path="/dashboard/technicien" 
             element={
               <ProtectedRoute requiredRole="TECHNICIEN">
@@ -115,17 +125,10 @@ function App() {
                 <AdministrateurDashboard />
               </ProtectedRoute>
             } 
-          />
-
-          <Route 
-            path="/dashboard/responsable-logistique" 
-            element={
-              <ProtectedRoute requiredRole="RESPONSABLE_LOGISTIQUE">
-                <ResponsableLogistiqueDashboard />
-              </ProtectedRoute>
-            } 
           /> */}
-         
+
+
+
 
           {/* Route par défaut - redirection */}
           <Route path="*" element={<Navigate to="/" replace />} />
