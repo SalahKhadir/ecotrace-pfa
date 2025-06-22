@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { authService, userService, wasteService } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import { STATUS_LABELS, COLLECTE_STATUS } from '../../utils/constants';
+import '../../styles/TransporteurDashboard.css';
 
 const TransporteurDashboard = () => {
   const navigate = useNavigate();

@@ -1,4 +1,4 @@
-/* ResponsableLogistiqueDashboard.css */
+/* TransporteurDashboard.css */
 
 /* Layout principal */
 .dashboard-container {
@@ -41,9 +41,9 @@
   margin: 0;
 }
 
-/* Badge Responsable Logistique */
-.badge-logistique {
-  background-color: #6366f1;
+/* Badge Transporteur */
+.badge-transporteur {
+  background-color: var(--eco-green);
   color: white;
   padding: 0.25rem 0.75rem;
   border-radius: 1rem;
@@ -125,6 +125,17 @@
 .menu-icon {
   font-size: 1.25rem;
   min-width: 1.25rem;
+}
+
+.notification-badge {
+  background-color: #ef4444;
+  color: white;
+  font-size: 0.7rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 50%;
+  margin-left: auto;
+  min-width: 1.2rem;
+  text-align: center;
 }
 
 /* Main content */
@@ -302,10 +313,87 @@
   box-shadow: 0 4px 12px rgba(251, 192, 45, 0.3);
 }
 
+/* ===== URGENT SECTION ===== */
+
+.urgent-section {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  border: 1px solid #e5e7eb;
+  margin-bottom: 2rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.urgent-section h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--eco-dark);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.urgent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.urgent-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.urgent-item:hover {
+  background-color: #fef7f7;
+  transform: translateX(2px);
+}
+
+.urgent-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.urgent-ref {
+  font-weight: 600;
+  color: var(--eco-dark);
+}
+
+.urgent-date {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.btn-urgent {
+  background-color: #ef4444;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-urgent:hover {
+  background-color: #dc2626;
+  transform: translateY(-1px);
+}
+
 /* ===== FORMULAIRES ET COLLECTES ===== */
 
 /* Grilles de cartes */
-.formulaires-grid {
+.formulaires-grid,
+.collectes-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 1.5rem;
@@ -395,7 +483,7 @@
 
 /* ===== TABLEAUX ===== */
 
-.tracability-table {
+.collectes-table {
   background: white;
   border-radius: 1rem;
   border: 1px solid #e5e7eb;
@@ -405,7 +493,7 @@
 
 .table-header {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   background-color: #f9fafb;
   border-bottom: 1px solid #e5e7eb;
   font-weight: 600;
@@ -414,7 +502,7 @@
 
 .table-row {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   border-bottom: 1px solid #e5e7eb;
   transition: background-color 0.2s ease;
 }
@@ -428,6 +516,11 @@
   display: flex;
   align-items: center;
   font-size: 0.875rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
 }
 
 /* ===== BOUTONS ===== */
@@ -451,8 +544,8 @@
 }
 
 .btn-secondary {
-  background-color: #e5e7eb;
-  color: var(--eco-dark);
+  background-color: var(--eco-blue);
+  color: white;
   padding: 0.5rem 1rem;
   border: none;
   border-radius: 0.5rem;
@@ -463,7 +556,32 @@
 }
 
 .btn-secondary:hover {
-  background-color: #d1d5db;
+  background-color: var(--eco-blue-light);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 46, 80, 0.3);
+}
+
+.btn-tertiary {
+  background-color: var(--eco-yellow);
+  color: var(--eco-dark);
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-tertiary:hover {
+  background-color: var(--eco-yellow-light);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(251, 192, 45, 0.3);
+}
+
+.btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
 }
 
 .btn-icon {
@@ -536,6 +654,10 @@
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
+}
+
+.modal-content.large {
+  max-width: 800px;
 }
 
 .modal-header {
@@ -611,15 +733,6 @@
   box-shadow: 0 0 0 3px rgba(87, 138, 49, 0.1);
 }
 
-.readonly-field {
-  padding: 0.75rem;
-  background-color: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
-  color: #6b7280;
-  font-size: 0.875rem;
-}
-
 /* ===== ÉTATS VIDES ===== */
 
 .empty-state {
@@ -646,47 +759,150 @@
   color: #6b7280;
 }
 
-/* ===== SECTIONS SPÉCIFIQUES ===== */
+/* ===== NOTIFICATIONS ===== */
 
-/* Reports section */
-.reports-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+.notifications-list {
+  background: white;
+  border-radius: 1rem;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.notification-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  position: relative;
+  transition: background-color 0.3s ease;
+}
+
+.notification-item:last-child {
+  border-bottom: none;
+}
+
+.notification-item.unread {
+  background-color: #f0f9ff;
+}
+
+.notification-item:hover {
+  background-color: #f9fafb;
+}
+
+.notification-icon {
+  font-size: 1.5rem;
+  min-width: 2rem;
+  text-align: center;
+}
+
+.notification-content {
+  flex: 1;
+}
+
+.notification-content p {
+  margin: 0 0 0.25rem 0;
+  font-weight: 500;
+  color: var(--eco-dark);
+}
+
+.notification-time {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.unread-indicator {
+  width: 8px;
+  height: 8px;
+  background-color: var(--eco-blue);
+  border-radius: 50%;
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+}
+
+/* ===== DÉTAILS FORMULAIRE ===== */
+
+.formulaire-details {
+  display: flex;
+  flex-direction: column;
   gap: 1.5rem;
 }
 
-.report-card {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 1rem;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  text-align: center;
-  transition: all 0.3s ease;
+.details-section {
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
 }
 
-.report-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+.details-section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
 }
 
-.report-icon {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
-  color: var(--eco-green);
-}
-
-.report-card h3 {
+.details-section h4 {
   font-size: 1.125rem;
   font-weight: 600;
   color: var(--eco-dark);
-  margin-bottom: 0.5rem;
+  margin-bottom: 1rem;
 }
 
-.report-card p {
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.detail-item .label {
+  font-weight: 500;
   color: #6b7280;
   font-size: 0.875rem;
+}
+
+.photos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 1rem;
+}
+
+.photo-placeholder {
+  aspect-ratio: 1;
+  background-color: #f3f4f6;
+  border: 2px dashed #d1d5db;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+/* ===== CONFIRMATION MODAL ===== */
+
+.confirmation-details {
   margin-bottom: 1.5rem;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.detail-item:last-child {
+  border-bottom: none;
+}
+
+.detail-item .label {
+  font-weight: 500;
+  color: #6b7280;
 }
 
 /* ===== RESPONSIVE ===== */
@@ -719,7 +935,8 @@
     grid-template-columns: 1fr;
   }
   
-  .formulaires-grid {
+  .formulaires-grid,
+  .collectes-grid {
     grid-template-columns: 1fr;
   }
   
@@ -730,8 +947,7 @@
   }
   
   .table-cell:nth-child(5),
-  .table-cell:nth-child(6),
-  .table-cell:nth-child(7) {
+  .table-cell:nth-child(6) {
     display: none;
   }
   
@@ -739,5 +955,17 @@
     margin: 1rem;
     max-width: none;
     width: auto;
+  }
+  
+  .urgent-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+  
+  .card-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
   }
 }
