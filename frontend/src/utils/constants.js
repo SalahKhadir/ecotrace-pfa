@@ -39,6 +39,14 @@ export const COLLECTE_STATUS = {
   ANNULEE: 'ANNULEE'
 };
 
+// États des demandes
+export const DEMANDE_STATUS = {
+  EN_ATTENTE: 'EN_ATTENTE',
+  APPROUVEE: 'APPROUVEE',
+  REJETEE: 'REJETEE',
+  PLANIFIEE: 'PLANIFIEE'
+};
+
 // Types de déchets
 export const WASTE_TYPES = {
   A_RECYCLER: 'A_RECYCLER',
@@ -51,6 +59,28 @@ export const STATUS_LABELS = {
   [COLLECTE_STATUS.EN_COURS]: 'En cours',
   [COLLECTE_STATUS.TERMINEE]: 'Terminée',
   [COLLECTE_STATUS.ANNULEE]: 'Annulée'
+};
+
+// Labels des statuts de demandes
+export const DEMANDE_STATUS_LABELS = {
+  [DEMANDE_STATUS.EN_ATTENTE]: 'En attente',
+  [DEMANDE_STATUS.APPROUVEE]: 'Approuvée',
+  [DEMANDE_STATUS.REJETEE]: 'Rejetée',
+  [DEMANDE_STATUS.PLANIFIEE]: 'Planifiée'
+};
+
+// Types de déchets détaillés
+export const DETAILED_WASTE_TYPES = {
+  ELECTRONIQUE: 'Déchets électroniques',
+  PLASTIQUE: 'Déchets plastiques',
+  PAPIER: 'Papier et carton',
+  VERRE: 'Déchets de verre',
+  METAL: 'Déchets métalliques',
+  ORGANIQUE: 'Déchets organiques',
+  DANGEREUX: 'Déchets dangereux',
+  TEXTILE: 'Déchets textiles',
+  BOIS: 'Déchets de bois',
+  AUTRE: 'Autres déchets'
 };
 
 // Couleurs par rôle (pour les badges)

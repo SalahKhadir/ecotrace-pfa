@@ -113,32 +113,52 @@ export const authService = {
 // Services utilisateur
 export const userService = {
   getProfile: async () => {
-    const response = await api.get('/profile/');
+    const response = await api.get('/users/profile/');
     return response.data;
   },
   
   updateProfile: async (userData) => {
-    const response = await api.put('/profile/', userData);
+    const response = await api.put('/users/profile/', userData);
     return response.data;
   },
 
   getDashboardInfo: async () => {
-    const response = await api.get('/dashboard-info/');
+    const response = await api.get('/users/dashboard-info/');
     return response.data;
   },
 
   checkDashboardAccess: async (dashboardType) => {
-    const response = await api.get(`/dashboard-access/${dashboardType}/`);
+    const response = await api.get(`/users/dashboard-access/${dashboardType}/`);
     return response.data;
   },
-
+  // User management for administrators
   getAllUsers: async () => {
-    const response = await api.get('/users/');
+    const response = await api.get('/users/manage/');
     return response.data;
   },
   
-  getDashboardInfo: async () => {
-    const response = await api.get('/users/dashboard-info/');
+  createUser: async (userData) => {
+    const response = await api.post('/users/manage/', userData);
+    return response.data;
+  },
+  
+  updateUser: async (userId, userData) => {
+    const response = await api.put(`/users/manage/${userId}/`, userData);
+    return response.data;
+  },
+  
+  deleteUser: async (userId) => {
+    const response = await api.delete(`/users/manage/${userId}/`);
+    return response.data;
+  },
+  
+  toggleUserStatus: async (userId) => {
+    const response = await api.post(`/users/manage/${userId}/toggle_status/`);
+    return response.data;
+  },
+  
+  getUserStatistics: async () => {
+    const response = await api.get('/users/manage/statistics/');
     return response.data;
   },
 };
@@ -187,10 +207,24 @@ export const wasteService = {
   validerFormulaire: async (id, data = {}) => {
     const response = await api.post(`/waste/formulaires/${id}/valider/`, data);
     return response.data;
+  },  // Demande approval/rejection  
+  approuverDemande: async (id, data = {}) => {
+    const response = await api.post(`/waste/formulaires/${id}/approuver/`, data, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    });
+    return response.data;
   },
   
-  rejeterFormulaire: async (id, raison) => {
-    const response = await api.post(`/waste/formulaires/${id}/rejeter/`, { raison });
+  rejeterDemande: async (id, data) => {
+    const response = await api.post(`/waste/formulaires/${id}/rejeter/`, data, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    });
     return response.data;
   },
   

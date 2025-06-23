@@ -1,7 +1,7 @@
 from rest_framework import generics, viewsets, status, permissions
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from django.utils import timezone
@@ -20,7 +20,14 @@ class FormulaireCollecteViewSet(viewsets.ModelViewSet):
     """
     serializer_class = FormulaireCollecteSerializer
     permission_classes = [permissions.IsAuthenticated]
-    parser_classes = [MultiPartParser, FormParser]  # Pour supporter l'upload de fichiers
+    
+    def get_parser_classes(self):
+        """Choose parser based on action"""
+        if self.action in ['approuver', 'rejeter', 'valider']:
+            # For admin actions, use JSON parser only
+            return [JSONParser]
+        # For file uploads (create, update)
+        return [MultiPartParser, FormParser, JSONParser]
     
     def get_queryset(self):
         """Filtrer selon le rôle de l'utilisateur"""
@@ -68,8 +75,7 @@ class FormulaireCollecteViewSet(viewsets.ModelViewSet):
                 {'error': f'Impossible de valider un formulaire avec le statut: {formulaire.get_statut_display()}'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
-        # Informations du point de collecte pour apport volontaire
+          # Informations du point de collecte pour apport volontaire
         point_collecte = request.data.get('point_collecte', '')
         horaires_ouverture = request.data.get('horaires_ouverture', '')
         
@@ -85,7 +91,45 @@ class FormulaireCollecteViewSet(viewsets.ModelViewSet):
             'formulaire': serializer.data
         })
     
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], parser_classes=[JSONParser])
+    def approuver(self, request, pk=None):
+        """Approuver une demande (admin seulement)"""
+        if not (request.user.is_administrateur or request.user.is_responsable_logistique):
+            return Response(
+                {'error': 'Permission refusée. Seuls les administrateurs peuvent approuver.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        formulaire = self.get_object()
+        
+        if formulaire.statut != 'SOUMIS':
+            return Response(
+                {'error': f'Impossible d\'approuver un formulaire avec le statut: {formulaire.get_statut_display()}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Mettre à jour le statut et les informations d'approbation
+        formulaire.statut = 'VALIDE'  # ou 'APPROUVE' selon votre modèle
+        formulaire.date_validation = timezone.now()
+        formulaire.validateur = request.user
+        
+        # Ajouter les notes d'administration
+        notes_admin = request.data.get('notes', '')
+        priorite = request.data.get('priorite', 'normale')
+        
+        if hasattr(formulaire, 'notes_admin'):
+            formulaire.notes_admin = notes_admin
+        if hasattr(formulaire, 'priorite'):
+            formulaire.priorite = priorite
+            
+        formulaire.save()
+        
+        serializer = self.get_serializer(formulaire)
+        return Response({            'message': 'Demande approuvée avec succès',
+            'formulaire': serializer.data
+        })
+    
+    @action(detail=True, methods=['post'], parser_classes=[JSONParser])
     def rejeter(self, request, pk=None):
         """Rejeter un formulaire (admin seulement)"""
         if not (request.user.is_administrateur or request.user.is_responsable_logistique):
@@ -95,14 +139,33 @@ class FormulaireCollecteViewSet(viewsets.ModelViewSet):
             )
         
         formulaire = self.get_object()
-        raison = request.data.get('raison', 'Aucune raison fournie')
         
-        formulaire.rejeter(raison)
+        if formulaire.statut != 'SOUMIS':
+            return Response(
+                {'error': f'Impossible de rejeter un formulaire avec le statut: {formulaire.get_statut_display()}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        motif = request.data.get('motif', 'Aucun motif fourni')
+        notes = request.data.get('notes', '')
+        
+        # Mettre à jour le statut et les informations de rejet
+        formulaire.statut = 'REJETE'
+        formulaire.date_validation = timezone.now()
+        formulaire.validateur = request.user
+        
+        if hasattr(formulaire, 'motif_rejet'):
+            formulaire.motif_rejet = motif
+        if hasattr(formulaire, 'notes_admin'):
+            formulaire.notes_admin = notes
+            
+        formulaire.save()
         
         serializer = self.get_serializer(formulaire)
         return Response({
             'message': 'Formulaire rejeté',
-            'formulaire': serializer.data
+            'formulaire': serializer.data,
+            'motif': motif
         })
     
     @action(detail=False, methods=['get'])
@@ -361,11 +424,17 @@ def dashboard_stats(request):
     
     elif user.is_administrateur or user.is_responsable_logistique:
         # Stats pour admins et responsables logistique
+        from users.models import User
+        
         stats = {
-            'formulaires_total': FormulaireCollecte.objects.count(),
-            'formulaires_en_attente': FormulaireCollecte.objects.filter(statut='SOUMIS').count(),
-            'collectes_total': Collecte.objects.count(),
+            'total_utilisateurs': User.objects.count(),
+            'demandes_en_attente': FormulaireCollecte.objects.filter(statut='SOUMIS').count(),
             'collectes_planifiees': Collecte.objects.filter(statut='PLANIFIEE').count(),
+            'sous_traitants_actifs': User.objects.filter(
+                role__in=['TRANSPORTEUR', 'TECHNICIEN'], is_active=True
+            ).count(),
+            'formulaires_total': FormulaireCollecte.objects.count(),
+            'collectes_total': Collecte.objects.count(),
             'collectes_en_cours': Collecte.objects.filter(statut='EN_COURS').count(),
             'dechets_total': Dechet.objects.count(),
         }

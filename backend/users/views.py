@@ -1,11 +1,12 @@
-from rest_framework import status, generics, permissions
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework import status, generics, permissions, viewsets
+from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth import authenticate
 from django.shortcuts import get_object_or_404
+from django.db.models import Q
 
 from .models import User
 from .serializers import (
@@ -134,6 +135,95 @@ class UserListView(generics.ListAPIView):
         else:
             # Les autres ne voient que leur propre profil
             return User.objects.filter(id=self.request.user.id)
+
+class UserManagementViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for full user management by administrators
+    """
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        # Only admins can manage all users
+        if self.request.user.is_administrateur or self.request.user.is_superuser:
+            return User.objects.all().order_by('-date_joined')
+        else:
+            return User.objects.filter(id=self.request.user.id)
+    
+    def create(self, request, *args, **kwargs):
+        """Create a new user (admin only)"""
+        if not (request.user.is_administrateur or request.user.is_superuser):
+            return Response(
+                {'error': 'Permission denied. Only administrators can create users.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        serializer = UserRegistrationSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            return Response({
+                'message': 'User created successfully',
+                'user': UserSerializer(user).data
+            }, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def update(self, request, *args, **kwargs):
+        """Update user (admin only)"""
+        if not (request.user.is_administrateur or request.user.is_superuser):
+            return Response(
+                {'error': 'Permission denied. Only administrators can update users.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        return super().update(request, *args, **kwargs)
+    
+    def destroy(self, request, *args, **kwargs):
+        """Delete user (admin only)"""
+        if not (request.user.is_administrateur or request.user.is_superuser):
+            return Response(
+                {'error': 'Permission denied. Only administrators can delete users.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        return super().destroy(request, *args, **kwargs)
+    
+    @action(detail=True, methods=['post'])
+    def toggle_status(self, request, pk=None):
+        """Toggle user active status"""
+        if not (request.user.is_administrateur or request.user.is_superuser):
+            return Response(
+                {'error': 'Permission denied'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        user = self.get_object()
+        user.is_active = not user.is_active
+        user.save()
+        
+        return Response({
+            'message': f'User {"activated" if user.is_active else "deactivated"} successfully',
+            'user': UserSerializer(user).data
+        })
+    
+    @action(detail=False, methods=['get'])
+    def statistics(self, request):
+        """Get user statistics"""
+        if not (request.user.is_administrateur or request.user.is_superuser):
+            return Response(
+                {'error': 'Permission denied'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        stats = {
+            'total_users': User.objects.count(),
+            'active_users': User.objects.filter(is_active=True).count(),
+            'inactive_users': User.objects.filter(is_active=False).count(),
+            'by_role': {
+                role[0]: User.objects.filter(role=role[0]).count()
+                for role in User.ROLE_CHOICES
+            }
+        }
+        
+        return Response(stats)
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])

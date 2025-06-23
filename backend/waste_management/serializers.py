@@ -20,12 +20,13 @@ class FormulaireCollecteSerializer(serializers.ModelSerializer):
             'date_souhaitee', 'creneau_horaire', 'adresse_collecte', 'telephone',
             'instructions_speciales', 'photo1', 'photo2', 'photo3', 'photos',
             'statut', 'point_collecte', 'horaires_ouverture',
+            'urgence', 'notes_admin', 'motif_rejet', 'validateur', 'date_validation',
             'date_creation', 'date_modification', 'date_traitement',
             'collecte_info'
         ]
         read_only_fields = [
             'utilisateur', 'reference', 'date_creation', 'date_modification',
-            'date_traitement'
+            'date_traitement', 'date_validation', 'validateur'
         ]
     
     def get_utilisateur_info(self, obj):
@@ -168,19 +169,37 @@ class FormulaireCollecteListSerializer(serializers.ModelSerializer):
     Serializer simplifié pour la liste des formulaires
     """
     utilisateur_nom = serializers.SerializerMethodField()
+    utilisateur_info = serializers.SerializerMethodField()
     photos_count = serializers.SerializerMethodField()
     
     class Meta:
         model = FormulaireCollecte
         fields = [
-            'id', 'reference', 'utilisateur_nom', 'type_dechets', 'description',
-            'mode_collecte', 'date_souhaitee', 'statut', 'photos_count',
-            'date_creation'
+            'id', 'reference', 'utilisateur', 'utilisateur_nom', 'utilisateur_info', 
+            'type_dechets', 'description', 'quantite_estimee', 'mode_collecte', 
+            'date_souhaitee', 'creneau_horaire', 'adresse_collecte', 'telephone',
+            'instructions_speciales', 'statut', 'photos_count', 
+            'urgence', 'notes_admin', 'motif_rejet', 'validateur', 'date_validation',
+            'date_creation', 'date_modification'
         ]
     
     def get_utilisateur_nom(self, obj):
         """Nom de l'utilisateur"""
         return obj.utilisateur.get_full_name() or obj.utilisateur.username
+    
+    def get_utilisateur_info(self, obj):
+        """Informations sur l'utilisateur qui a soumis le formulaire"""
+        user = obj.utilisateur
+        return {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'phone': getattr(user, 'phone', ''),
+            'company_name': getattr(user, 'company_name', ''),
+            'role': user.role,
+        }
     
     def get_photos_count(self, obj):
         """Nombre de photos attachées"""

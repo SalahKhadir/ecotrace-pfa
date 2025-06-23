@@ -9,9 +9,8 @@ import ParticulierDashboard from './pages/particulier/ParticulierDashboard';
 import EntrepriseDashboard from './pages/entreprise/EntrepriseDashboard';
 import TransporteurDashboard from './pages/transporteur/TransporteurDashboard';
 import ResponsableLogistiqueDashboard from './pages/responsable-logistique/ResponsableLogistiqueDashboard';
-
-// import TechnicienDashboard from './pages/technicien/TechnicienDashboard';
-// import AdministrateurDashboard from './pages/administrateur/AdministrateurDashboard';
+import TechnicienDashboard from './pages/technicien/TechnicienDashboard';
+import AdministrateurDashboard from './pages/administrateur/AdministrateurDashboard';
 
 import './App.css';
 
@@ -109,7 +108,7 @@ function App() {
             }
           />
 
-          {/* <Route 
+          <Route 
             path="/dashboard/technicien" 
             element={
               <ProtectedRoute requiredRole="TECHNICIEN">
@@ -125,7 +124,7 @@ function App() {
                 <AdministrateurDashboard />
               </ProtectedRoute>
             } 
-          /> */}
+          />
 
 
 

@@ -22,11 +22,10 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     
     # API racine
-    path('api/', api_root, name='api_root'),
-    
-    # API endpoints
-    path('api/', include('users.urls')),
-    path('api/waste/', include('waste_management.urls')),  # AJOUTEZ CETTE LIGNE
+    path('api/', api_root, name='api_root'),    # API endpoints
+    path('api/auth/', include(('users.urls', 'users'), namespace='auth')),  # Authentication endpoints
+    path('api/users/', include(('users.urls', 'users'), namespace='users')),  # User management endpoints
+    path('api/waste/', include('waste_management.urls')),
 ]
 
 # Servir les fichiers media en développement

@@ -150,6 +150,45 @@ class FormulaireCollecte(models.Model):
         default='SOUMIS'
     )
     
+    # Champs pour la gestion administrative
+    urgence = models.CharField(
+        max_length=20,
+        choices=[
+            ('faible', 'Faible'),
+            ('normale', 'Normale'),
+            ('haute', 'Haute'),
+        ],
+        default='normale',
+        help_text='Niveau d\'urgence de la demande'
+    )
+    
+    notes_admin = models.TextField(
+        blank=True,
+        null=True,
+        help_text='Notes administratives'
+    )
+    
+    motif_rejet = models.TextField(
+        blank=True,
+        null=True,
+        help_text='Motif du rejet si applicable'
+    )
+    
+    validateur = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='formulaires_valides',
+        help_text='Administrateur qui a validé/rejeté'
+    )
+    
+    date_validation = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text='Date de validation/rejet'
+    )
+    
     # Informations pour l'apport volontaire
     point_collecte = models.CharField(
         max_length=200,
