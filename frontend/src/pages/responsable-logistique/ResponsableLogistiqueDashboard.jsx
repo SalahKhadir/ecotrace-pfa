@@ -9,12 +9,12 @@ const ResponsableLogistiqueDashboard = () => {
   const [activeSection, setActiveSection] = useState('overview');
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
-  
-  // Données
+    // Données
   const [stats, setStats] = useState({});
   const [collectes, setCollectes] = useState([]);
   const [dechets, setDechets] = useState([]);
   const [formulaires, setFormulaires] = useState([]);
+  const [transporteurs, setTransporteurs] = useState([]);
   
   // États pour la planification
   const [showPlanificationModal, setShowPlanificationModal] = useState(false);
@@ -39,7 +39,6 @@ const ResponsableLogistiqueDashboard = () => {
     
     loadInitialData();
   }, [navigate]);
-
   const loadInitialData = async () => {
     try {
       setLoading(true);
@@ -48,7 +47,8 @@ const ResponsableLogistiqueDashboard = () => {
         loadStats(),
         loadCollectes(),
         loadDechets(),
-        loadFormulaires()
+        loadFormulaires(),
+        loadTransporteurs()
       ]);
     } catch (error) {
       console.error('Erreur lors du chargement:', error);
@@ -73,12 +73,11 @@ const ResponsableLogistiqueDashboard = () => {
     } catch (error) {
       console.error('Erreur stats:', error);
     }
-  };
-
-  const loadCollectes = async () => {
+  };  const loadCollectes = async () => {
     try {
       const response = await wasteService.getAllCollectes();
-      setCollectes(response.results || response);
+      const collectesData = response.results || response;
+      setCollectes(collectesData);
     } catch (error) {
       console.error('Erreur collectes:', error);
     }
@@ -91,19 +90,27 @@ const ResponsableLogistiqueDashboard = () => {
     } catch (error) {
       console.error('Erreur déchets:', error);
     }
-  };
-
-  const loadFormulaires = async () => {
+  };  const loadFormulaires = async () => {
     try {
       const response = await wasteService.getAllFormulaires();
       const formulairesData = response.results || response;
-      // Filtrer les formulaires validés sans collecte
+        // Filter only validated formulaires that are not yet planned (not EN_COURS)
       const formulairesValides = formulairesData.filter(f => 
-        f.statut === 'VALIDE' && !f.collecte_associee
+        f.statut === 'VALIDE'
       );
+      
       setFormulaires(formulairesValides);
     } catch (error) {
       console.error('Erreur formulaires:', error);
+    }
+  };
+
+  const loadTransporteurs = async () => {
+    try {
+      const response = await userService.getTransporteurs();
+      setTransporteurs(response);
+    } catch (error) {
+      console.error('Erreur transporteurs:', error);
     }
   };
 
@@ -127,41 +134,43 @@ const ResponsableLogistiqueDashboard = () => {
     });
     setShowPlanificationModal(true);
   };
-
   const confirmerPlanification = async () => {
     try {
-      // Pour l'instant, on simule la création de collecte
-      // Cette fonctionnalité sera complétée côté backend
-      
+      // Créer la collecte avec transporteur assigné
       const collecteData = {
-        utilisateur: selectedFormulaire.utilisateur.id,
+        utilisateur: selectedFormulaire.utilisateur.id || selectedFormulaire.utilisateur,
         formulaire_origine: selectedFormulaire.id,
         date_collecte: planificationData.date_collecte,
         mode_collecte: selectedFormulaire.mode_collecte,
         adresse: selectedFormulaire.adresse_collecte,
         telephone: selectedFormulaire.telephone,
         statut: 'PLANIFIEE',
+        transporteur: planificationData.transporteur_id || null,
         instructions: planificationData.instructions
       };
 
-      // TODO: Implémenter wasteService.createCollecte() côté backend
-      console.log('Collecte à créer:', collecteData);
+      // Créer la collecte
+      const response = await wasteService.createCollecte(collecteData);
+      
+      // Si un transporteur est assigné, l'assigner explicitement
+      if (planificationData.transporteur_id) {
+        await wasteService.assignerTransporteur(response.id, planificationData.transporteur_id);
+      }
       
       setShowPlanificationModal(false);
       await Promise.all([loadCollectes(), loadFormulaires(), loadStats()]);
       
-      alert('Collecte planifiée avec succès ! (Fonctionnalité en développement)');
+      alert('Collecte planifiée avec succès !');
     } catch (error) {
       console.error('Erreur planification:', error);
-      alert('Erreur lors de la planification');
+      alert('Erreur lors de la planification: ' + (error.response?.data?.error || error.message));
     }
   };
-
-  const getFilteredDechets = () => {
-    let filtered = [...dechets];
+  const getFilteredCollectes = () => {
+    let filtered = [...collectes];
     
     if (traceabilityFilter !== 'all') {
-      filtered = filtered.filter(d => d.etat === traceabilityFilter);
+      filtered = filtered.filter(c => c.statut === traceabilityFilter);
     }
     
     if (dateFilter !== 'all') {
@@ -180,22 +189,19 @@ const ResponsableLogistiqueDashboard = () => {
           break;
       }
       
-      filtered = filtered.filter(d => new Date(d.created_at) >= filterDate);
+      filtered = filtered.filter(c => new Date(c.created_at) >= filterDate);
     }
     
     return filtered;
   };
-
-  const getEtatColor = (etat) => {
+  const getStatutColor = (statut) => {
     const colors = {
-      'COLLECTE': '#3b82f6',
-      'TRI': '#f59e0b', 
-      'A_RECYCLER': '#10b981',
-      'RECYCLE': '#059669',
-      'A_DETRUIRE': '#ef4444',
-      'DETRUIT': '#dc2626'
+      'PLANIFIEE': '#3b82f6',
+      'EN_COURS': '#f59e0b', 
+      'TERMINEE': '#10b981',
+      'ANNULEE': '#ef4444'
     };
-    return colors[etat] || '#6b7280';
+    return colors[statut] || '#6b7280';
   };
 
   const renderOverview = () => (
@@ -268,10 +274,17 @@ const ResponsableLogistiqueDashboard = () => {
   );
 
   const renderPlanification = () => (
-    <div className="planification-section">
-      <div className="section-header">
+    <div className="planification-section">      <div className="section-header">
         <h2>Planification des Collectes</h2>
-        <p>Organiser les collectes à partir des formulaires validés</p>
+        <p>Organiser les collectes à partir des formulaires validés</p>        <button 
+          className="btn-secondary" 
+          onClick={() => {
+            loadFormulaires();
+          }}
+          style={{ marginLeft: 'auto' }}
+        >
+          🔄 Actualiser
+        </button>
       </div>
 
       {formulaires.length === 0 ? (
@@ -342,8 +355,7 @@ const ResponsableLogistiqueDashboard = () => {
                   {selectedFormulaire?.reference} - {selectedFormulaire?.utilisateur_nom}
                 </div>
               </div>
-              
-              <div className="form-group">
+                <div className="form-group">
                 <label>Date de collecte:</label>
                 <input
                   type="date"
@@ -354,6 +366,43 @@ const ResponsableLogistiqueDashboard = () => {
                   })}
                   min={new Date().toISOString().split('T')[0]}
                 />
+              </div>
+              
+              <div className="form-group">
+                <label>Transporteur assigné:</label>
+                <select
+                  value={planificationData.transporteur_id}
+                  onChange={(e) => setPlanificationData({
+                    ...planificationData,
+                    transporteur_id: e.target.value
+                  })}
+                >
+                  <option value="">Sélectionner un transporteur...</option>
+                  {transporteurs.map(transporteur => (
+                    <option key={transporteur.id} value={transporteur.id}>
+                      {transporteur.first_name} {transporteur.last_name} 
+                      {transporteur.company_name && ` (${transporteur.company_name})`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="form-group">
+                <label>Transporteur:</label>
+                <select
+                  value={planificationData.transporteur_id}
+                  onChange={(e) => setPlanificationData({
+                    ...planificationData,
+                    transporteur_id: e.target.value
+                  })}
+                >
+                  <option value="">Sélectionner un transporteur</option>
+                  {transporteurs.map(transporteur => (
+                    <option key={transporteur.id} value={transporteur.id}>
+                      {transporteur.username} - {transporteur.telephone}
+                    </option>
+                  ))}
+                </select>
               </div>
               
               <div className="form-group">
@@ -376,13 +425,12 @@ const ResponsableLogistiqueDashboard = () => {
                 onClick={() => setShowPlanificationModal(false)}
               >
                 Annuler
-              </button>
-              <button 
+              </button>              <button 
                 className="btn-primary"
                 onClick={confirmerPlanification}
-                disabled={!planificationData.date_collecte}
+                disabled={!planificationData.date_collecte || !planificationData.transporteur_id}
               >
-                Confirmer
+                Confirmer la Planification
               </button>
             </div>
           </div>
@@ -392,27 +440,23 @@ const ResponsableLogistiqueDashboard = () => {
   );
 
   const renderTracabilite = () => (
-    <div className="tracabilite-section">
-      <div className="section-header">
+    <div className="tracabilite-section">      <div className="section-header">
         <h2>Suivi de la Traçabilité</h2>
-        <p>Suivre le parcours complet des déchets collectés</p>
+        <p>Suivre le statut et l'évolution des collectes planifiées</p>
       </div>
 
-      {/* Filtres */}
-      <div className="filters-bar">
+      {/* Filtres */}      <div className="filters-bar">
         <div className="filter-group">
-          <label>État:</label>
+          <label>Statut:</label>
           <select 
             value={traceabilityFilter}
             onChange={(e) => setTraceabilityFilter(e.target.value)}
           >
             <option value="all">Tous</option>
-            <option value="COLLECTE">Collecté</option>
-            <option value="TRI">En cours de tri</option>
-            <option value="A_RECYCLER">À recycler</option>
-            <option value="RECYCLE">Recyclé</option>
-            <option value="A_DETRUIRE">À détruire</option>
-            <option value="DETRUIT">Détruit</option>
+            <option value="PLANIFIEE">Planifiée</option>
+            <option value="EN_COURS">En cours</option>
+            <option value="TERMINEE">Terminée</option>
+            <option value="ANNULEE">Annulée</option>
           </select>
         </div>
         
@@ -428,40 +472,38 @@ const ResponsableLogistiqueDashboard = () => {
             <option value="quarter">3 derniers mois</option>
           </select>
         </div>
-      </div>
-
-      {/* Tableau de traçabilité */}
+      </div>      {/* Tableau de traçabilité */}
       <div className="tracability-table">
         <div className="table-header">
-          <div className="table-cell">ID</div>
-          <div className="table-cell">Type</div>
-          <div className="table-cell">Collecte</div>
-          <div className="table-cell">État</div>
-          <div className="table-cell">Technicien</div>
-          <div className="table-cell">Date</div>
+          <div className="table-cell">Référence</div>
+          <div className="table-cell">Utilisateur</div>
+          <div className="table-cell">Date Collecte</div>
+          <div className="table-cell">Statut</div>
+          <div className="table-cell">Transporteur</div>
+          <div className="table-cell">Adresse</div>
           <div className="table-cell">Actions</div>
-        </div>
-        
-        {getFilteredDechets().map(dechet => (
-          <div key={dechet.id} className="table-row">
-            <div className="table-cell">#{dechet.id}</div>
-            <div className="table-cell">{dechet.type}</div>
+        </div>        {getFilteredCollectes().map(collecte => (
+          <div key={collecte.id} className="table-row">
+            <div className="table-cell">{collecte.reference}</div>
             <div className="table-cell">
-              {dechet.collecte?.reference || 'N/A'}
+              {collecte.utilisateur_nom || 'N/A'}
+            </div>
+            <div className="table-cell">
+              {new Date(collecte.date_collecte).toLocaleDateString()}
             </div>
             <div className="table-cell">
               <span 
                 className="status-pill"
-                style={{ backgroundColor: getEtatColor(dechet.etat) }}
+                style={{ backgroundColor: getStatutColor(collecte.statut) }}
               >
-                {dechet.etat}
+                {collecte.statut}
               </span>
             </div>
             <div className="table-cell">
-              {dechet.technicien?.username || 'Non assigné'}
+              {collecte.transporteur_nom || 'Non assigné'}
             </div>
             <div className="table-cell">
-              {new Date(dechet.created_at).toLocaleDateString()}
+              {collecte.adresse || 'N/A'}
             </div>
             <div className="table-cell">
               <button className="btn-icon" title="Voir détails">
@@ -469,14 +511,11 @@ const ResponsableLogistiqueDashboard = () => {
               </button>
             </div>
           </div>
-        ))}
-      </div>
-
-      {getFilteredDechets().length === 0 && (
+        ))}</div>      {getFilteredCollectes().length === 0 && (
         <div className="empty-state">
           <div className="empty-icon">🔍</div>
-          <h3>Aucun déchet trouvé</h3>
-          <p>Aucun déchet ne correspond aux filtres sélectionnés.</p>
+          <h3>Aucune collecte trouvée</h3>
+          <p>Aucune collecte ne correspond aux filtres sélectionnés.</p>
         </div>
       )}
     </div>

@@ -211,22 +211,36 @@ class CollecteSerializer(serializers.ModelSerializer):
     """
     reference = serializers.CharField(read_only=True)
     utilisateur_info = serializers.SerializerMethodField(read_only=True)
+    utilisateur_nom = serializers.SerializerMethodField(read_only=True)
     transporteur_info = serializers.SerializerMethodField(read_only=True)
+    transporteur_nom = serializers.SerializerMethodField(read_only=True)
     formulaire_info = serializers.SerializerMethodField(read_only=True)
     dechets_count = serializers.SerializerMethodField(read_only=True)
     
     class Meta:
         model = Collecte
         fields = [
-            'id', 'reference', 'utilisateur', 'utilisateur_info',
+            'id', 'reference', 'utilisateur', 'utilisateur_info', 'utilisateur_nom',
             'formulaire_origine', 'formulaire_info', 'date_collecte', 'date_prevue',
             'mode_collecte', 'statut', 'adresse', 'telephone', 'transporteur',
-            'transporteur_info', 'point_collecte', 'dechets_count',
+            'transporteur_info', 'transporteur_nom', 'point_collecte', 'dechets_count',
             'created_at', 'updated_at'
         ]
         read_only_fields = [
-            'utilisateur', 'reference', 'created_at', 'updated_at'
+            'reference', 'created_at', 'updated_at'
         ]
+    
+    def get_utilisateur_nom(self, obj):
+        """Nom complet de l'utilisateur"""
+        user = obj.utilisateur
+        return user.get_full_name() or user.username
+    
+    def get_transporteur_nom(self, obj):
+        """Nom complet du transporteur"""
+        if obj.transporteur:
+            user = obj.transporteur
+            return user.get_full_name() or user.username
+        return None
     
     def get_utilisateur_info(self, obj):
         """Informations sur l'utilisateur"""

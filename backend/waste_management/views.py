@@ -231,6 +231,27 @@ class CollecteViewSet(viewsets.ModelViewSet):
             return CollecteListSerializer
         return CollecteSerializer
     
+    def perform_create(self, serializer):
+        """Créer une collecte avec gestion de l'utilisateur et du transporteur"""
+        # Si un utilisateur spécifique est fourni dans les données, l'utiliser
+        # Sinon, utiliser l'utilisateur connecté par défaut
+        utilisateur_id = self.request.data.get('utilisateur')
+        if utilisateur_id:
+            try:
+                from users.models import User
+                utilisateur = User.objects.get(id=utilisateur_id)
+                collecte = serializer.save(utilisateur=utilisateur)
+            except User.DoesNotExist:
+                collecte = serializer.save(utilisateur=self.request.user)
+        else:
+            collecte = serializer.save(utilisateur=self.request.user)
+        
+        # Update the related formulaire status to EN_COURS
+        if collecte.formulaire_origine:
+            formulaire = collecte.formulaire_origine
+            formulaire.statut = 'EN_COURS'
+            formulaire.save()
+
     @action(detail=True, methods=['post'])
     def assigner_transporteur(self, request, pk=None):
         """Assigner un transporteur à une collecte (admin ou transporteur)"""

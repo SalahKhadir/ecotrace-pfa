@@ -161,6 +161,12 @@ export const userService = {
     const response = await api.get('/users/manage/statistics/');
     return response.data;
   },
+
+  // Get transporteurs for logistics planning
+  getTransporteurs: async () => {
+    const response = await api.get('/users/manage/transporteurs/');
+    return response.data;
+  },
 };
 
 // Services de gestion des déchets (NOUVEAUX)
@@ -198,7 +204,6 @@ export const wasteService = {
     const response = await api.get('/waste/formulaires/mes_formulaires/');
     return response.data;
   },
-  
   getAllFormulaires: async () => {
     const response = await api.get('/waste/formulaires/');
     return response.data;

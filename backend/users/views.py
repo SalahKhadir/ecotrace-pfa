@@ -224,6 +224,23 @@ class UserManagementViewSet(viewsets.ModelViewSet):
         }
         
         return Response(stats)
+    
+    @action(detail=False, methods=['get'])
+    def transporteurs(self, request):
+        """Get list of transporteurs for logistics planning"""
+        if not (request.user.is_administrateur or request.user.is_responsable_logistique or request.user.is_superuser):
+            return Response(
+                {'error': 'Permission denied'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        transporteurs = User.objects.filter(
+            role='TRANSPORTEUR', 
+            is_active=True
+        ).order_by('first_name', 'last_name')
+        
+        serializer = UserSerializer(transporteurs, many=True)
+        return Response(serializer.data)
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
