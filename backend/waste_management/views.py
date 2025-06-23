@@ -497,3 +497,140 @@ def points_collecte(request):
     ]
     
     return Response(points)
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def collectes_transporteur(request):
+    """
+    Récupère les collectes assignées au transporteur connecté
+    """
+    user = request.user
+    
+    if not user.is_transporteur:
+        return Response(
+            {'error': 'Accès refusé. Seuls les transporteurs peuvent accéder à cette ressource.'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    # Récupérer toutes les collectes assignées à ce transporteur
+    collectes = Collecte.objects.filter(transporteur=user).select_related(
+        'utilisateur', 
+        'formulaire_origine'
+    ).prefetch_related('dechets')
+    
+    # Organiser les données par statut
+    collectes_data = {
+        'assignees': [],
+        'en_cours': [],
+        'terminees': []
+    }
+    
+    for collecte in collectes:
+        collecte_info = {
+            'id': collecte.id,
+            'reference': collecte.reference,
+            'date_collecte': collecte.date_collecte,
+            'statut': collecte.statut,
+            'statut_display': collecte.get_statut_display(),
+            'adresse': collecte.adresse,
+            'telephone': collecte.telephone,
+            'utilisateur': {
+                'id': collecte.utilisateur.id,
+                'nom': collecte.utilisateur.get_full_name() or collecte.utilisateur.username,
+                'email': collecte.utilisateur.email,
+                'role': collecte.utilisateur.role
+            },
+            'formulaire_origine': None
+        }
+        
+        # Ajouter les informations du formulaire d'origine si disponible
+        if collecte.formulaire_origine:
+            form = collecte.formulaire_origine
+            collecte_info['formulaire_origine'] = {
+                'id': form.id,
+                'reference': form.reference,
+                'type_dechets': form.type_dechets,
+                'description': form.description,
+                'quantite_estimee': form.quantite_estimee,
+                'mode_collecte': form.mode_collecte,
+                'date_souhaitee': form.date_souhaitee,
+                'statut': form.statut
+            }
+        
+        # Classer par statut
+        if collecte.statut == 'PLANIFIEE':
+            collectes_data['assignees'].append(collecte_info)
+        elif collecte.statut == 'EN_COURS':
+            collectes_data['en_cours'].append(collecte_info)
+        elif collecte.statut == 'TERMINEE':
+            collectes_data['terminees'].append(collecte_info)
+    
+    return Response(collectes_data)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def formulaires_a_verifier(request):
+    """
+    Récupère les formulaires de collecte que le transporteur doit vérifier
+    """
+    user = request.user
+    
+    if not user.is_transporteur:
+        return Response(
+            {'error': 'Accès refusé. Seuls les transporteurs peuvent accéder à cette ressource.'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    # Récupérer les formulaires des collectes assignées à ce transporteur
+    collectes_assignees = Collecte.objects.filter(transporteur=user).values_list('formulaire_origine', flat=True)
+    
+    formulaires = FormulaireCollecte.objects.filter(
+        id__in=collectes_assignees
+    ).select_related('utilisateur')
+    
+    formulaires_data = []
+    for form in formulaires:
+        # Récupérer la collecte associée
+        collecte_associee = Collecte.objects.filter(formulaire_origine=form, transporteur=user).first()
+        
+        formulaire_info = {
+            'id': form.id,
+            'reference': form.reference,
+            'type_dechets': form.type_dechets,
+            'description': form.description,
+            'quantite_estimee': form.quantite_estimee,
+            'mode_collecte': form.mode_collecte,
+            'date_souhaitee': form.date_souhaitee,
+            'creneau_horaire': form.creneau_horaire,
+            'adresse_collecte': form.adresse_collecte,
+            'telephone': form.telephone,
+            'instructions_speciales': form.instructions_speciales,
+            'statut': form.statut,
+            'date_creation': form.date_creation,
+            'utilisateur_info': {
+                'id': form.utilisateur.id,
+                'first_name': form.utilisateur.first_name,
+                'last_name': form.utilisateur.last_name,
+                'email': form.utilisateur.email,
+                'username': form.utilisateur.username,
+                'role': form.utilisateur.role,
+            },
+            'photos': form.get_photos(),
+            'collecte': None
+        }
+        
+        # Ajouter les infos de la collecte si elle existe
+        if collecte_associee:
+            formulaire_info['collecte'] = {
+                'id': collecte_associee.id,
+                'reference': collecte_associee.reference,
+                'date_collecte': collecte_associee.date_collecte,
+                'statut': collecte_associee.statut,
+                'adresse': collecte_associee.adresse,
+                'telephone': collecte_associee.telephone
+            }
+        
+        formulaires_data.append(formulaire_info)
+    
+    return Response(formulaires_data)

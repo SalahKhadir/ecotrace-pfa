@@ -9,25 +9,15 @@ const TransporteurDashboard = () => {
   const [activeSection, setActiveSection] = useState('overview');
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
-  
-  // Données
+    // Données
   const [stats, setStats] = useState({});
   const [formulaires, setFormulaires] = useState([]);
   const [collectes, setCollectes] = useState([]);
   const [notifications, setNotifications] = useState([]);
-  // Nouvelles données pour les fonctionnalités Transporteur
-  const [assignedCollections, setAssignedCollections] = useState([]);
-  const [validatedCollections, setValidatedCollections] = useState([]);
   
-  // États pour la vérification des formulaires
+  // États pour la modal
   const [selectedFormulaire, setSelectedFormulaire] = useState(null);
   const [showFormulaireModal, setShowFormulaireModal] = useState(false);
-  const [showValidationModal, setShowValidationModal] = useState(false);
-  const [validationData, setValidationData] = useState({
-    quantiteCollectee: '',
-    notes: '',
-    photo: null
-  });
   
   // États pour la confirmation
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
@@ -36,11 +26,10 @@ const TransporteurDashboard = () => {
   const [confirmationData, setConfirmationData] = useState({
     notes: '',
     photo: null
-  });
-
-  // Filtres
+  });  // Filtres
   const [formulaireFilter, setFormulaireFilter] = useState('tous');
   const [collecteFilter, setCollecteFilter] = useState('assignees');
+  const [dateFilter, setDateFilter] = useState('tous'); // nouveau filtre par date
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
@@ -51,19 +40,17 @@ const TransporteurDashboard = () => {
     }
     
     loadInitialData();
-  }, [navigate]);
-
-  const loadInitialData = async () => {
+  }, [navigate]);  const loadInitialData = async () => {
     try {
       setLoading(true);
+      // Load user data first
+      const userData = await loadUserData();
+      // Then load other data (transporteur endpoints don't need user data passed)
       await Promise.all([
-        loadUserData(),
         loadStats(),
-        loadFormulaires(),
-        loadCollectes(),
         loadNotifications(),
-        loadAssignedCollections(),
-        loadValidatedCollections()
+        loadFormulaires(),
+        loadCollectes()
       ]);
     } catch (error) {
       console.error('Erreur lors du chargement:', error);
@@ -76,8 +63,10 @@ const TransporteurDashboard = () => {
     try {
       const userData = await userService.getDashboardInfo();
       setUser(userData.user);
+      return userData.user; // Return user data for immediate use
     } catch (error) {
       console.error('Erreur utilisateur:', error);
+      return null;
     }
   };
 
@@ -88,17 +77,14 @@ const TransporteurDashboard = () => {
     } catch (error) {
       console.error('Erreur stats:', error);
     }
-  };
-
-  const loadFormulaires = async () => {
+  };  const loadFormulaires = async (currentUser = null) => {
     try {
-      const response = await wasteService.getAllFormulaires();
-      const formulairesData = response.results || response;
-      // Filtrer les formulaires validés pour les transporteurs
-      const formulairesValides = formulairesData.filter(f => 
-        f.statut === 'VALIDE' || f.statut === 'EN_COURS'
-      );
-      setFormulaires(formulairesValides);
+      // Use the specific transporteur endpoint
+      const formulairesData = await wasteService.getFormulairesTransporteur();
+      
+      console.log('Formulaires from transporteur endpoint:', formulairesData);
+      
+      setFormulaires(formulairesData);
     } catch (error) {
       console.error('Erreur formulaires:', error);
     }
@@ -106,14 +92,23 @@ const TransporteurDashboard = () => {
 
   const loadCollectes = async () => {
     try {
-      const response = await wasteService.getAllCollectes();
-      const collectesData = response.results || response;
-      setCollectes(collectesData);
+      // Use the specific transporteur endpoint
+      const collectesData = await wasteService.getCollectesTransporteur();
+      
+      console.log('Collectes from transporteur endpoint:', collectesData);
+      
+      // Convert the organized data back to a flat array for compatibility with existing code
+      const allCollectes = [
+        ...(collectesData.assignees || []),
+        ...(collectesData.en_cours || []),
+        ...(collectesData.terminees || [])
+      ];
+      
+      setCollectes(allCollectes);
     } catch (error) {
       console.error('Erreur collectes:', error);
     }
   };
-
   const loadNotifications = async () => {
     // Simuler des notifications - à terme, cela viendra d'une API dédiée
     const mockNotifications = [
@@ -140,40 +135,6 @@ const TransporteurDashboard = () => {
       }
     ];
     setNotifications(mockNotifications);
-  };
-
-  const loadAssignedCollections = async () => {
-    try {
-      // Charger les collectes assignées par RespoLogistique
-      const assignments = JSON.parse(localStorage.getItem('transporteurAssignments') || '[]');
-      const userAssignments = assignments.filter(a => a.transporteurId === user?.id && a.statut === 'assigne');
-      
-      // Charger les détails des formulaires correspondants
-      const collectionForms = JSON.parse(localStorage.getItem('collectionForms') || '[]');
-      const assignedData = userAssignments.map(assignment => {
-        const form = collectionForms.find(f => f.id === assignment.formId);
-        return {
-          ...assignment,
-          formDetails: form,
-          canValidate: true
-        };
-      });
-      
-      setAssignedCollections(assignedData);
-    } catch (error) {
-      console.error('Erreur lors du chargement des collectes assignées:', error);
-    }
-  };
-
-  const loadValidatedCollections = async () => {
-    try {
-      // Charger les collectes validées par le transporteur
-      const validated = JSON.parse(localStorage.getItem('validatedCollections') || '[]');
-      const userValidated = validated.filter(v => v.transporteurId === user?.id);
-      setValidatedCollections(userValidated);
-    } catch (error) {
-      console.error('Erreur lors du chargement des collectes validées:', error);
-    }
   };
 
   const handleLogout = async () => {
@@ -225,21 +186,53 @@ const TransporteurDashboard = () => {
       alert('Erreur lors de la confirmation');
     }
   };
-
   const getFilteredFormulaires = () => {
-    if (formulaireFilter === 'tous') return formulaires;
-    return formulaires.filter(f => f.statut === formulaireFilter);
+    let filtered = formulaires;
+    
+    // Filtre par statut
+    if (formulaireFilter !== 'tous') {
+      filtered = filtered.filter(f => f.statut === formulaireFilter);
+    }
+    
+    // Filtre par date
+    if (dateFilter !== 'tous') {
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const weekFromNow = new Date(today);
+      weekFromNow.setDate(weekFromNow.getDate() + 7);
+      
+      filtered = filtered.filter(f => {
+        const dateSouhaitee = new Date(f.date_souhaitee);
+        
+        switch (dateFilter) {
+          case 'aujourd_hui':
+            return dateSouhaitee.toDateString() === today.toDateString();
+          case 'demain':
+            return dateSouhaitee.toDateString() === tomorrow.toDateString();
+          case 'cette_semaine':
+            return dateSouhaitee >= today && dateSouhaitee <= weekFromNow;
+          case 'urgent':
+            // Formulaires avec date souhaitée dans les prochaines 24h
+            return dateSouhaitee <= tomorrow && dateSouhaitee >= today;
+          default:
+            return true;
+        }
+      });
+    }
+    
+    return filtered;
   };
-
   const getFilteredCollectes = () => {
     if (collecteFilter === 'assignees') {
-      return collectes.filter(c => c.transporteur?.id === user?.id);
+      return collectes.filter(c => isMyCollecte(c));
     } else if (collecteFilter === 'disponibles') {
-      return collectes.filter(c => !c.transporteur && c.statut === 'PLANIFIEE');
+      return collectes.filter(c => !c.transporteur && !c.transporteur_info && c.statut === 'PLANIFIEE');
     }
     return collectes;
   };
-
   const getStatutColor = (statut) => {
     const colors = {
       'PLANIFIEE': '#3b82f6',
@@ -248,6 +241,33 @@ const TransporteurDashboard = () => {
       'ANNULEE': '#ef4444'
     };
     return colors[statut] || '#6b7280';
+  };  // Helper function to check if a collecte is assigned to the current user
+  // Since we're using the transporteur-specific endpoint, all collectes are already filtered
+  const isMyCollecte = (collecte) => {
+    return true; // All collectes from the transporteur endpoint are already mine
+  };
+
+  // Helper function to check if a formulaire is urgent (date souhaitée dans les prochaines 24h)
+  const isFormulaireUrgent = (formulaire) => {
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const dateSouhaitee = new Date(formulaire.date_souhaitee);
+    
+    return dateSouhaitee <= tomorrow && dateSouhaitee >= today;
+  };
+
+  // Helper function to get priority class for formulaire
+  const getFormulairePriorityClass = (formulaire) => {
+    if (isFormulaireUrgent(formulaire)) return 'formulaire-urgent';
+    
+    const today = new Date();
+    const dateSouhaitee = new Date(formulaire.date_souhaitee);
+    const diffDays = Math.ceil((dateSouhaitee - today) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays <= 2) return 'formulaire-priorite-haute';
+    if (diffDays <= 7) return 'formulaire-priorite-moyenne';
+    return '';
   };
 
   const renderOverview = () => (
@@ -255,22 +275,19 @@ const TransporteurDashboard = () => {
       <div className="section-header">
         <h2>Tableau de Bord Transporteur</h2>
         <p>Gestion des collectes et vérification des formulaires</p>
-      </div>
-
-      {/* Statistiques */}
+      </div>      {/* Statistiques */}
       <div className="stats-grid">
         <div className="stat-card">
           <div className="stat-icon">📋</div>
           <div className="stat-content">
-            <div className="stat-number">{stats.formulaires_a_verifier || 0}</div>
-            <div className="stat-label">Formulaires à Vérifier</div>
+            <div className="stat-number">{formulaires.length || 0}</div>
+            <div className="stat-label">Mes Formulaires</div>
           </div>
         </div>
-        
-        <div className="stat-card">
+          <div className="stat-card">
           <div className="stat-icon">🚛</div>
           <div className="stat-content">
-            <div className="stat-number">{stats.collectes_assignees || 0}</div>
+            <div className="stat-number">{collectes.filter(c => isMyCollecte(c)).length || 0}</div>
             <div className="stat-label">Mes Collectes</div>
           </div>
         </div>
@@ -278,7 +295,7 @@ const TransporteurDashboard = () => {
         <div className="stat-card">
           <div className="stat-icon">⏳</div>
           <div className="stat-content">
-            <div className="stat-number">{stats.collectes_en_attente || 0}</div>
+            <div className="stat-number">{collectes.filter(c => isMyCollecte(c) && c.statut === 'PLANIFIEE').length || 0}</div>
             <div className="stat-label">En Attente</div>
           </div>
         </div>
@@ -286,7 +303,7 @@ const TransporteurDashboard = () => {
         <div className="stat-card">
           <div className="stat-icon">✅</div>
           <div className="stat-content">
-            <div className="stat-number">{stats.collectes_terminees || 0}</div>
+            <div className="stat-number">{collectes.filter(c => isMyCollecte(c) && c.statut === 'TERMINEE').length || 0}</div>
             <div className="stat-label">Terminées</div>
           </div>
         </div>
@@ -319,10 +336,9 @@ const TransporteurDashboard = () => {
 
       {/* Collectes urgentes */}
       <div className="urgent-section">
-        <h3>Collectes Urgentes</h3>
-        <div className="urgent-list">
+        <h3>Collectes Urgentes</h3>        <div className="urgent-list">
           {collectes
-            .filter(c => c.transporteur?.id === user?.id && c.statut === 'EN_COURS')
+            .filter(c => isMyCollecte(c) && c.statut === 'EN_COURS')
             .slice(0, 3)
             .map(collecte => (
               <div key={collecte.id} className="urgent-item">
@@ -343,148 +359,181 @@ const TransporteurDashboard = () => {
         </div>
       </div>
     </div>
-  );
-
-  const renderFormulaires = () => (
+  );  const renderFormulaires = () => (
     <div className="formulaires-section">
       <div className="section-header">
-        <h2>Vérification des Formulaires</h2>
-        <p>Collectes assignées par la logistique à valider</p>
+        <h2>Mes Formulaires de Collecte</h2>
+        <p>Formulaires des collectes qui vous sont assignées</p>
       </div>
 
-      {/* Liste des collectes assignées */}
+      {/* Contrôles de filtrage */}
+      <div className="filters-section">
+        <div className="filters-row">
+          <div className="filter-group">
+            <label>Filtrer par statut:</label>
+            <select 
+              value={formulaireFilter} 
+              onChange={(e) => setFormulaireFilter(e.target.value)}
+              className="filter-select"
+            >
+              <option value="tous">Tous les statuts</option>
+              <option value="VALIDE">Validés</option>
+              <option value="EN_COURS">En cours</option>
+              <option value="TERMINEE">Terminés</option>
+            </select>
+          </div>
+          
+          <div className="filter-group">
+            <label>Filtrer par date:</label>
+            <select 
+              value={dateFilter} 
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="filter-select"
+            >
+              <option value="tous">Toutes les dates</option>
+              <option value="urgent">🔴 Urgent (24h)</option>
+              <option value="aujourd_hui">📅 Aujourd'hui</option>
+              <option value="demain">⏰ Demain</option>
+              <option value="cette_semaine">📆 Cette semaine</option>
+            </select>
+          </div>
+          
+          <div className="filter-stats">
+            <span className="results-count">
+              {getFilteredFormulaires().length} formulaire(s) trouvé(s)
+            </span>
+          </div>
+        </div>
+      </div>      {/* Liste des formulaires avec détails */}
       <div className="formulaires-grid">
-        {assignedCollections.filter(a => a.statut === 'assigne').map(assignment => (
-          <div key={assignment.id} className="formulaire-card">
+        {getFilteredFormulaires().map(formulaire => (
+          <div key={formulaire.id} className={`formulaire-card ${getFormulairePriorityClass(formulaire)}`}>
             <div className="card-header">
-              <h4>Collecte #{assignment.formDetails?.id}</h4>
-              <span className={`status-badge ${assignment.statut}`}>
-                Assignée
-              </span>
+              <div className="reference-and-priority">
+                <h4>{formulaire.reference}</h4>
+                {isFormulaireUrgent(formulaire) && (
+                  <span className="priority-badge urgent">
+                    🔴 URGENT
+                  </span>
+                )}
+                {!isFormulaireUrgent(formulaire) && getFormulairePriorityClass(formulaire) === 'formulaire-priorite-haute' && (
+                  <span className="priority-badge high">
+                    🟠 Priorité haute
+                  </span>
+                )}
+              </div>
+              <div className="status-info">
+                <span className={`status-badge ${formulaire.statut.toLowerCase()}`}>
+                  {formulaire.statut}
+                </span>
+                {formulaire.collecte && (
+                  <span 
+                    className="collecte-status"
+                    style={{ backgroundColor: getStatutColor(formulaire.collecte.statut) }}
+                  >
+                    {formulaire.collecte.statut}
+                  </span>
+                )}
+              </div>
             </div>
             
             <div className="card-content">
               <div className="info-row">
-                <span className="label">Entreprise:</span>
-                <span>{assignment.formDetails?.entrepriseNom}</span>
+                <span className="label">Client:</span>
+                <span>{formulaire.utilisateur_info?.first_name} {formulaire.utilisateur_info?.last_name}</span>
               </div>
               <div className="info-row">
-                <span className="label">Type de déchet:</span>
-                <span>{assignment.formDetails?.typeDechet}</span>
+                <span className="label">Email:</span>
+                <span>{formulaire.utilisateur_info?.email}</span>
+              </div>
+              <div className="info-row">
+                <span className="label">Téléphone:</span>
+                <span>{formulaire.telephone}</span>
+              </div>
+              <div className="info-row">
+                <span className="label">Type de déchets:</span>
+                <span>{formulaire.type_dechets}</span>
               </div>
               <div className="info-row">
                 <span className="label">Quantité estimée:</span>
-                <span>{assignment.formDetails?.quantite} kg</span>
+                <span>{formulaire.quantite_estimee || 'Non spécifiée'}</span>
               </div>
               <div className="info-row">
-                <span className="label">Date planifiée:</span>
-                <span>{new Date(assignment.datePlanifiee).toLocaleDateString()}</span>
+                <span className="label">Mode de collecte:</span>
+                <span>{formulaire.mode_collecte === 'domicile' ? 'Collecte à domicile' : 'Apport volontaire'}</span>
               </div>
+              <div className="info-row">
+                <span className="label">Date souhaitée:</span>
+                <span>{new Date(formulaire.date_souhaitee).toLocaleDateString()}</span>
+              </div>
+              {formulaire.collecte && (
+                <div className="info-row">
+                  <span className="label">Date de collecte:</span>
+                  <span>{new Date(formulaire.collecte.date_collecte).toLocaleDateString()}</span>
+                </div>
+              )}
               <div className="info-row">
                 <span className="label">Adresse:</span>
-                <span>{assignment.formDetails?.adresse}</span>
+                <span>{formulaire.adresse_collecte}</span>
               </div>
+              {formulaire.instructions_speciales && (
+                <div className="info-row">
+                  <span className="label">Instructions:</span>
+                  <span className="instructions">{formulaire.instructions_speciales}</span>
+                </div>
+              )}
             </div>
             
             <div className="card-actions">
               <button 
                 className="btn-secondary"
-                onClick={() => voirFormulaireDetails(assignment.formDetails)}
+                onClick={() => voirFormulaireDetails(formulaire)}
               >
-                🔍 Détails
+                🔍 Voir Détails
               </button>
-              <button 
-                className="btn-primary"
-                onClick={() => handleValidateCollection(assignment)}
-              >
-                ✅ Valider Collecte
-              </button>
+              {formulaire.collecte && formulaire.collecte.statut === 'PLANIFIEE' && (
+                <button 
+                  className="btn-primary"
+                  onClick={() => confirmerReceptionEmission(formulaire.collecte, 'reception')}
+                >
+                  ✅ Confirmer Réception
+                </button>
+              )}
+              {formulaire.collecte && formulaire.collecte.statut === 'EN_COURS' && (
+                <button 
+                  className="btn-success"
+                  onClick={() => confirmerReceptionEmission(formulaire.collecte, 'emission')}
+                >
+                  🚚 Confirmer Livraison
+                </button>
+              )}
             </div>
           </div>
         ))}
       </div>
 
-      {assignedCollections.filter(a => a.statut === 'assigne').length === 0 && (
+      {getFilteredFormulaires().length === 0 && formulaires.length > 0 && (
         <div className="empty-state">
-          <div className="empty-icon">📭</div>
-          <h3>Aucune collecte assignée</h3>
-          <p>Vous n'avez pas de collecte assignée en attente de validation.</p>
+          <div className="empty-icon">🔍</div>
+          <h3>Aucun formulaire trouvé</h3>
+          <p>Aucun formulaire ne correspond aux filtres sélectionnés.</p>
+          <button 
+            className="btn-secondary"
+            onClick={() => {
+              setFormulaireFilter('tous');
+              setDateFilter('tous');
+            }}
+          >
+            Réinitialiser les filtres
+          </button>
         </div>
       )}
 
-      {/* Modal de validation de collecte */}
-      {showValidationModal && selectedFormulaire && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h3>Valider la Collecte</h3>
-              <button 
-                className="modal-close"
-                onClick={() => setShowValidationModal(false)}
-              >
-                ✕
-              </button>
-            </div>
-            
-            <div className="modal-body">
-              <div className="validation-details">
-                <div className="detail-item">
-                  <span className="label">Entreprise:</span>
-                  <span>{selectedFormulaire.formDetails?.entrepriseNom}</span>
-                </div>
-                <div className="detail-item">
-                  <span className="label">Type de déchet:</span>
-                  <span>{selectedFormulaire.formDetails?.typeDechet}</span>
-                </div>
-                <div className="detail-item">
-                  <span className="label">Quantité estimée:</span>
-                  <span>{selectedFormulaire.formDetails?.quantite} kg</span>
-                </div>
-              </div>
-              
-              <div className="form-group">
-                <label>Quantité réellement collectée (kg) *:</label>
-                <input
-                  type="number"
-                  value={validationData.quantiteCollectee}
-                  onChange={(e) => setValidationData({
-                    ...validationData,
-                    quantiteCollectee: e.target.value
-                  })}
-                  placeholder="Quantité en kg"
-                  required
-                />
-              </div>
-              
-              <div className="form-group">
-                <label>Notes (optionnel):</label>
-                <textarea
-                  value={validationData.notes}
-                  onChange={(e) => setValidationData({
-                    ...validationData,
-                    notes: e.target.value
-                  })}
-                  placeholder="Observations sur la collecte..."
-                  rows="3"
-                />
-              </div>
-            </div>
-            
-            <div className="modal-footer">
-              <button 
-                className="btn-secondary"
-                onClick={() => setShowValidationModal(false)}
-              >
-                Annuler
-              </button>
-              <button 
-                className="btn-primary"
-                onClick={submitValidation}
-              >
-                Valider la Collecte
-              </button>
-            </div>
-          </div>
+      {formulaires.length === 0 && (
+        <div className="empty-state">
+          <div className="empty-icon">📭</div>
+          <h3>Aucune collecte assignée</h3>
+          <p>Vous n'avez pas de collecte assignée pour le moment.</p>
         </div>
       )}
 
@@ -509,7 +558,11 @@ const TransporteurDashboard = () => {
                   <div className="details-grid">
                     <div className="detail-item">
                       <span className="label">Nom:</span>
-                      <span>{selectedFormulaire.utilisateur_nom}</span>
+                      <span>{selectedFormulaire.utilisateur_info?.first_name} {selectedFormulaire.utilisateur_info?.last_name}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="label">Email:</span>
+                      <span>{selectedFormulaire.utilisateur_info?.email}</span>
                     </div>
                     <div className="detail-item">
                       <span className="label">Téléphone:</span>
@@ -534,11 +587,48 @@ const TransporteurDashboard = () => {
                       <span>{selectedFormulaire.quantite_estimee || 'Non spécifiée'}</span>
                     </div>
                     <div className="detail-item">
+                      <span className="label">Mode de collecte:</span>
+                      <span>{selectedFormulaire.mode_collecte === 'domicile' ? 'Collecte à domicile' : 'Apport volontaire'}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="label">Date souhaitée:</span>
+                      <span>{new Date(selectedFormulaire.date_souhaitee).toLocaleDateString()}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="label">Créneau horaire:</span>
+                      <span>{selectedFormulaire.creneau_horaire || 'Non spécifié'}</span>
+                    </div>
+                    <div className="detail-item">
                       <span className="label">Description:</span>
                       <span>{selectedFormulaire.description}</span>
                     </div>
                   </div>
                 </div>
+
+                {selectedFormulaire.collecte && (
+                  <div className="details-section">
+                    <h4>Informations de la Collecte</h4>
+                    <div className="details-grid">
+                      <div className="detail-item">
+                        <span className="label">Référence collecte:</span>
+                        <span>{selectedFormulaire.collecte.reference}</span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="label">Date de collecte:</span>
+                        <span>{new Date(selectedFormulaire.collecte.date_collecte).toLocaleDateString()}</span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="label">Statut collecte:</span>
+                        <span 
+                          className="status-pill"
+                          style={{ backgroundColor: getStatutColor(selectedFormulaire.collecte.statut) }}
+                        >
+                          {selectedFormulaire.collecte.statut}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 
                 {selectedFormulaire.instructions_speciales && (
                   <div className="details-section">
@@ -547,12 +637,15 @@ const TransporteurDashboard = () => {
                   </div>
                 )}
                 
-                {selectedFormulaire.photos_count > 0 && (
+                {selectedFormulaire.photos && selectedFormulaire.photos.length > 0 && (
                   <div className="details-section">
-                    <h4>Photos ({selectedFormulaire.photos_count})</h4>
+                    <h4>Photos ({selectedFormulaire.photos.length})</h4>
                     <div className="photos-grid">
-                      {/* Les photos seraient affichées ici */}
-                      <div className="photo-placeholder">📷 Photo 1</div>
+                      {selectedFormulaire.photos.map((photo, index) => (
+                        <div key={index} className="photo-item">
+                          <img src={photo} alt={`Photo ${index + 1}`} />
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -566,93 +659,117 @@ const TransporteurDashboard = () => {
               >
                 Fermer
               </button>
+              {selectedFormulaire.collecte && selectedFormulaire.collecte.statut === 'PLANIFIEE' && (
+                <button 
+                  className="btn-primary"
+                  onClick={() => {
+                    setShowFormulaireModal(false);
+                    confirmerReceptionEmission(selectedFormulaire.collecte, 'reception');
+                  }}
+                >
+                  ✅ Confirmer Réception
+                </button>
+              )}
+              {selectedFormulaire.collecte && selectedFormulaire.collecte.statut === 'EN_COURS' && (
+                <button 
+                  className="btn-success"
+                  onClick={() => {
+                    setShowFormulaireModal(false);
+                    confirmerReceptionEmission(selectedFormulaire.collecte, 'emission');
+                  }}
+                >
+                  🚚 Confirmer Livraison
+                </button>
+              )}
             </div>
           </div>
         </div>
       )}
     </div>
   );
-
   const renderCollectes = () => (
     <div className="collectes-section">
       <div className="section-header">
         <h2>Mes Collectes</h2>
-        <p>Collectes validées et confirmations de livraison</p>
+        <p>Gestion et suivi de vos collectes assignées</p>
       </div>
 
-      {/* Collectes validées */}
-      <div className="collectes-validees">
-        <h3>Collectes Validées</h3>
-        <div className="collectes-table">
-          <div className="table-header">
-            <div className="table-cell">Entreprise</div>
-            <div className="table-cell">Type Déchet</div>
-            <div className="table-cell">Quantité Collectée</div>
-            <div className="table-cell">Date Validation</div>
-            <div className="table-cell">Statut</div>
-            <div className="table-cell">Actions</div>
-          </div>
-          
-          {validatedCollections.map(collection => (
-            <div key={collection.id} className="table-row">
+      {/* Tableau des collectes */}
+      <div className="collectes-table">
+        <div className="table-header">
+          <div className="table-cell">Référence</div>
+          <div className="table-cell">Formulaire</div>
+          <div className="table-cell">Client</div>
+          <div className="table-cell">Date Collecte</div>
+          <div className="table-cell">Statut</div>
+          <div className="table-cell">Actions</div>
+        </div>        {collectes.filter(c => isMyCollecte(c)).map(collecte => {
+          return (
+            <div key={collecte.id} className="table-row">
               <div className="table-cell">
-                <strong>{collection.formDetails?.entrepriseNom}</strong>
+                <strong>{collecte.reference}</strong>
               </div>
               <div className="table-cell">
-                {collection.formDetails?.typeDechet}
+                {collecte.formulaire_origine?.reference || 'N/A'}
               </div>
               <div className="table-cell">
-                {collection.quantiteCollectee} kg
+                {collecte.utilisateur?.nom || 'N/A'}
               </div>
               <div className="table-cell">
-                {new Date(collection.dateValidation).toLocaleDateString()}
+                {new Date(collecte.date_collecte).toLocaleDateString()}
               </div>
               <div className="table-cell">
                 <span 
                   className="status-pill"
-                  style={{ 
-                    backgroundColor: collection.statut === 'livre' ? '#10b981' : '#f59e0b' 
-                  }}
+                  style={{ backgroundColor: getStatutColor(collecte.statut) }}
                 >
-                  {collection.statut === 'livre' ? 'Livré' : 'Validé'}
+                  {collecte.statut}
                 </span>
               </div>
               <div className="table-cell">
                 <div className="action-buttons">
-                  {collection.statut === 'valide' && (
+                  {collecte.statut === 'PLANIFIEE' && (
                     <button 
                       className="btn-sm primary"
-                      onClick={() => handleDeliveryConfirmation(collection)}
+                      onClick={() => confirmerReceptionEmission(collecte, 'reception')}
+                    >
+                      ✅ Confirmer Réception
+                    </button>
+                  )}
+                  {collecte.statut === 'EN_COURS' && (
+                    <button 
+                      className="btn-sm success"
+                      onClick={() => confirmerReceptionEmission(collecte, 'emission')}
                     >
                       🚚 Confirmer Livraison
                     </button>
                   )}
-                  {collection.statut === 'livre' && (
+                  {collecte.statut === 'TERMINEE' && (
                     <span className="delivered-badge">
-                      ✅ Livré le {new Date(collection.dateLivraison).toLocaleDateString()}
+                      ✅ Terminée
                     </span>
                   )}
                 </div>
               </div>
             </div>
-          ))}
+          );
+        })}
+      </div>      {collectes.filter(c => isMyCollecte(c)).length === 0 && (
+        <div className="empty-state">
+          <div className="empty-icon">🚛</div>
+          <h3>Aucune collecte assignée</h3>
+          <p>Vous n'avez pas de collecte assignée pour le moment.</p>
         </div>
+      )}
 
-        {validatedCollections.length === 0 && (
-          <div className="empty-state">
-            <div className="empty-icon">🚛</div>
-            <h3>Aucune collecte validée</h3>
-            <p>Vous n'avez pas encore validé de collecte.</p>
-          </div>
-        )}
-      </div>
-
-      {/* Modal de confirmation de livraison */}
-      {showConfirmationModal && confirmationType === 'livraison' && selectedCollecte && (
+      {/* Modal de confirmation */}
+      {showConfirmationModal && selectedCollecte && (
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
-              <h3>Confirmer la Livraison</h3>
+              <h3>
+                {confirmationType === 'reception' ? 'Confirmer la Réception' : 'Confirmer la Livraison'}
+              </h3>
               <button 
                 className="modal-close"
                 onClick={() => setShowConfirmationModal(false)}
@@ -664,28 +781,32 @@ const TransporteurDashboard = () => {
             <div className="modal-body">
               <div className="confirmation-details">
                 <div className="detail-item">
-                  <span className="label">Entreprise:</span>
-                  <span>{selectedCollecte.formDetails?.entrepriseNom}</span>
+                  <span className="label">Collecte:</span>
+                  <span>{selectedCollecte.reference}</span>
                 </div>
                 <div className="detail-item">
-                  <span className="label">Quantité collectée:</span>
-                  <span>{selectedCollecte.quantiteCollectee} kg</span>
+                  <span className="label">Date:</span>
+                  <span>{new Date(selectedCollecte.date_collecte).toLocaleDateString()}</span>
                 </div>
                 <div className="detail-item">
-                  <span className="label">Date de collecte:</span>
-                  <span>{new Date(selectedCollecte.dateValidation).toLocaleDateString()}</span>
+                  <span className="label">Statut actuel:</span>
+                  <span>{selectedCollecte.statut}</span>
                 </div>
               </div>
               
               <div className="form-group">
-                <label>Notes de livraison (optionnel):</label>
+                <label>Notes (optionnel):</label>
                 <textarea
                   value={confirmationData.notes}
                   onChange={(e) => setConfirmationData({
                     ...confirmationData,
                     notes: e.target.value
                   })}
-                  placeholder="Observations sur la livraison au technicien..."
+                  placeholder={
+                    confirmationType === 'reception' 
+                      ? "Observations sur la réception..." 
+                      : "Observations sur la livraison..."
+                  }
                   rows="3"
                 />
               </div>
@@ -700,16 +821,51 @@ const TransporteurDashboard = () => {
               </button>
               <button 
                 className="btn-primary"
-                onClick={submitDeliveryConfirmation}
+                onClick={validerConfirmation}
               >
-                Confirmer la Livraison
+                {confirmationType === 'reception' ? 'Confirmer Réception' : 'Confirmer Livraison'}
               </button>
             </div>
           </div>
         </div>
       )}
+    </div>
+  );
 
-      {/* ...existing confirmation modal code for other types... */}
+  const renderNotifications = () => (
+    <div className="notifications-section">
+      <div className="section-header">
+        <h2>Notifications</h2>
+        <p>Messages et alertes concernant vos collectes</p>
+      </div>
+
+      <div className="notifications-list">
+        {notifications.map(notification => (
+          <div 
+            key={notification.id} 
+            className={`notification-item ${notification.unread ? 'unread' : ''}`}
+          >
+            <div className="notification-icon">
+              {notification.type === 'nouvelle_collecte' && '📦'}
+              {notification.type === 'collecte_urgent' && '🚨'}
+              {notification.type === 'rappel' && '⏰'}
+            </div>
+            <div className="notification-content">
+              <p className="notification-message">{notification.message}</p>
+              <span className="notification-time">Il y a {notification.time}</span>
+            </div>
+            {notification.unread && <div className="unread-badge"></div>}
+          </div>
+        ))}
+      </div>
+
+      {notifications.length === 0 && (
+        <div className="empty-state">
+          <div className="empty-icon">🔔</div>
+          <h3>Aucune notification</h3>
+          <p>Vous n'avez pas de notifications pour le moment.</p>
+        </div>
+      )}
     </div>
   );
 

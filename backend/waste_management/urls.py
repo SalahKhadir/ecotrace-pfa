@@ -17,4 +17,8 @@ urlpatterns = [
     # URLs pour les vues fonctionnelles
     path('dashboard-stats/', views.dashboard_stats, name='dashboard_stats'),
     path('points-collecte/', views.points_collecte, name='points_collecte'),
+    
+    # URLs spécifiques pour les transporteurs
+    path('transporteur/collectes/', views.collectes_transporteur, name='collectes_transporteur'),
+    path('transporteur/formulaires/', views.formulaires_a_verifier, name='formulaires_a_verifier'),
 ]

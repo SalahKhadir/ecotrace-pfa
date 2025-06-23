@@ -288,10 +288,20 @@ export const wasteService = {
     const response = await api.post('/waste/collectes/', collecteData);
     return response.data;
   },
-
   // Obtenir un utilisateur courant (pour remplacer authService.getCurrentUser)
   getCurrentUser: async () => {
     const response = await api.get('/users/dashboard-info/');
+    return response.data;
+  },
+
+  // Méthodes spécifiques pour les transporteurs
+  getCollectesTransporteur: async () => {
+    const response = await api.get('/waste/transporteur/collectes/');
+    return response.data;
+  },
+
+  getFormulairesTransporteur: async () => {
+    const response = await api.get('/waste/transporteur/formulaires/');
     return response.data;
   },
 };
