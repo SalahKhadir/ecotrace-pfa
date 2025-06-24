@@ -1231,3 +1231,157 @@
     padding: 0.2rem 0.6rem;
   }
 }
+
+/* Styles pour la modal de confirmation des déchets */
+.dechets-section {
+  background: #f8fffe;
+  border: 2px solid var(--eco-light-green);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1rem 0;
+}
+
+.dechets-section h4 {
+  color: var(--eco-green);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dechets-supplementaires {
+  margin-top: 1rem;
+}
+
+.dechets-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.dechets-header h5 {
+  margin: 0;
+  color: var(--eco-dark);
+}
+
+.btn-add-dechet {
+  background: var(--eco-green);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-add-dechet:hover {
+  background: #4caf50;
+  transform: translateY(-1px);
+}
+
+.dechet-supplementaire {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.dechet-row {
+  display: grid;
+  grid-template-columns: 1fr 2fr 0.8fr auto;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.form-select.small,
+.form-input.small {
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.form-select.small:focus,
+.form-input.small:focus {
+  outline: none;
+  border-color: var(--eco-green);
+  box-shadow: 0 0 0 2px rgba(52, 168, 83, 0.1);
+}
+
+.btn-remove-dechet {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1rem;
+}
+
+.btn-remove-dechet:hover {
+  background: #dc2626;
+  transform: scale(1.05);
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--eco-dark);
+}
+
+.form-select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+  font-size: 1rem;
+}
+
+.form-select:focus {
+  outline: none;
+  border-color: var(--eco-green);
+  box-shadow: 0 0 0 3px rgba(52, 168, 83, 0.1);
+}
+
+/* Animation pour les déchets supplémentaires */
+.dechet-supplementaire {
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive pour la modal des déchets */
+@media (max-width: 768px) {
+  .dechet-row {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  
+  .dechets-header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .btn-add-dechet {
+    width: 100%;
+  }
+}

@@ -281,14 +281,13 @@ class CollecteViewSet(viewsets.ModelViewSet):
             )
         
         collecte.transporteur = transporteur
-        collecte.save()
-        
+        collecte.save()        
         serializer = self.get_serializer(collecte)
         return Response({
             'message': 'Transporteur assigné avec succès',
             'collecte': serializer.data
         })
-    
+
     @action(detail=True, methods=['post'])
     def changer_statut(self, request, pk=None):
         """Changer le statut d'une collecte"""
@@ -304,6 +303,10 @@ class CollecteViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN
             )
         
+        # Si le transporteur termine la collecte, créer automatiquement les déchets
+        if nouveau_statut == 'TERMINEE' and request.user == collecte.transporteur:
+            self._creer_dechets_automatiquement(collecte, request.data)
+        
         if collecte.mettre_a_jour_statut(nouveau_statut):
             serializer = self.get_serializer(collecte)
             return Response({
@@ -315,6 +318,53 @@ class CollecteViewSet(viewsets.ModelViewSet):
                 {'error': 'Statut invalide'},
                 status=status.HTTP_400_BAD_REQUEST
             )
+    
+    def _creer_dechets_automatiquement(self, collecte, data):
+        """Créer automatiquement les déchets basés sur le formulaire de collecte"""
+        from .models import Dechet
+        
+        if collecte.formulaire_origine:
+            formulaire = collecte.formulaire_origine
+            
+            # Utiliser les informations du formulaire pour créer les déchets
+            quantite_estimee = data.get('quantite_reelle', formulaire.quantite_estimee)
+            
+            # Convertir la quantité textuelle en nombre si nécessaire
+            if isinstance(quantite_estimee, str):
+                if '1-5kg' in quantite_estimee:
+                    quantite = 3.0  # moyenne
+                elif '5-10kg' in quantite_estimee:
+                    quantite = 7.5
+                elif '10-20kg' in quantite_estimee:
+                    quantite = 15.0
+                elif '20kg+' in quantite_estimee:
+                    quantite = 25.0
+                else:
+                    quantite = 5.0  # défaut
+            else:
+                quantite = float(quantite_estimee) if quantite_estimee else 5.0
+            
+            # Créer le déchet principal
+            Dechet.objects.create(
+                type=formulaire.type_dechets,
+                categorie=formulaire.type_dechets,
+                description=f"Collecte {collecte.reference} - {formulaire.description}",
+                quantite=quantite,
+                etat='COLLECTE',
+                collecte=collecte
+            )
+            
+            # Si des déchets supplémentaires sont spécifiés dans les données
+            dechets_supplementaires = data.get('dechets_supplementaires', [])
+            for dechet_data in dechets_supplementaires:
+                Dechet.objects.create(
+                    type=dechet_data.get('type', 'autres'),
+                    categorie=dechet_data.get('categorie', 'divers'),
+                    description=dechet_data.get('description', ''),
+                    quantite=float(dechet_data.get('quantite', 1.0)),
+                    etat='COLLECTE',
+                    collecte=collecte
+                )
     
     @action(detail=False, methods=['get'])
     def mes_collectes(self, request):
@@ -338,27 +388,28 @@ class CollecteViewSet(viewsets.ModelViewSet):
 
 class DechetViewSet(viewsets.ModelViewSet):
     """
-    ViewSet pour gérer les déchets
+    ViewSet pour gérer les déchets collectés
     """
     serializer_class = DechetSerializer
     permission_classes = [permissions.IsAuthenticated]
-    parser_classes = [MultiPartParser, FormParser]
     
     def get_queryset(self):
         """Filtrer selon le rôle de l'utilisateur"""
         user = self.request.user
         
         if user.is_administrateur or user.is_responsable_logistique:
-            # Admin et responsable logistique voient tout
-            return Dechet.objects.all().select_related('collecte__utilisateur', 'technicien')
+            # Admin et responsable logistique voient tous les déchets
+            return Dechet.objects.all().select_related('collecte', 'technicien')
         elif user.is_technicien:
-            # Technicien voit tous les déchets à traiter
-            return Dechet.objects.all().select_related('collecte__utilisateur')
+            # Technicien voit les déchets non assignés et ses déchets assignés
+            return Dechet.objects.filter(
+                Q(technicien__isnull=True) | Q(technicien=user)
+            ).select_related('collecte')
         elif user.is_transporteur:
-            # Transporteur voit les déchets des collectes qui lui sont assignées
+            # Transporteur voit les déchets de ses collectes
             return Dechet.objects.filter(
                 collecte__transporteur=user
-            ).select_related('collecte__utilisateur', 'technicien')
+            ).select_related('collecte')
         else:
             # Particuliers et entreprises voient les déchets de leurs collectes
             return Dechet.objects.filter(
@@ -366,23 +417,67 @@ class DechetViewSet(viewsets.ModelViewSet):
             ).select_related('collecte', 'technicien')
     
     @action(detail=True, methods=['post'])
+    def assigner_technicien(self, request, pk=None):
+        """Assigner un technicien à un déchet (admin ou technicien)"""
+        dechet = self.get_object()
+        
+        if request.user.is_technicien:
+            # Le technicien s'assigne lui-même
+            technicien = request.user
+        elif request.user.is_administrateur or request.user.is_responsable_logistique:
+            # Admin assigne un technicien spécifique
+            technicien_id = request.data.get('technicien_id')
+            if not technicien_id:
+                return Response(
+                    {'error': 'ID du technicien requis'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            from users.models import User
+            technicien = get_object_or_404(
+                User.objects.filter(role='TECHNICIEN'),
+                id=technicien_id
+            )
+        else:
+            return Response(
+                {'error': 'Permission refusée'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        dechet.technicien = technicien
+        dechet.etat = 'TRI'
+        dechet.save()
+        
+        serializer = self.get_serializer(dechet)
+        return Response({
+            'message': f'Technicien {technicien.get_full_name()} assigné au déchet',
+            'dechet': serializer.data
+        })
+    
+    @action(detail=True, methods=['post'])
     def valoriser(self, request, pk=None):
         """Valoriser un déchet (technicien seulement)"""
+        dechet = self.get_object()
+        
         if not request.user.is_technicien:
             return Response(
                 {'error': 'Seuls les techniciens peuvent valoriser les déchets'},
                 status=status.HTTP_403_FORBIDDEN
             )
         
-        dechet = self.get_object()
-        nouvel_etat = request.data.get('etat')
+        if dechet.technicien != request.user:
+            return Response(
+                {'error': 'Vous ne pouvez valoriser que vos déchets assignés'},
+                status=status.HTTP_403_FORBIDDEN
+            )
         
-        if nouvel_etat not in dict(Dechet.ETAT_CHOICES):
+        nouvel_etat = request.data.get('etat')
+        if nouvel_etat not in ['TRI', 'A_RECYCLER', 'RECYCLE', 'A_DETRUIRE', 'DETRUIT']:
             return Response(
                 {'error': 'État invalide'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+        # Valoriser le déchet
         dechet.valoriser(request.user, nouvel_etat)
         
         serializer = self.get_serializer(dechet)
@@ -390,7 +485,40 @@ class DechetViewSet(viewsets.ModelViewSet):
             'message': f'Déchet valorisé: {dechet.get_etat_display()}',
             'dechet': serializer.data
         })
-
+    
+    @action(detail=False, methods=['get'])
+    def mes_dechets(self, request):
+        """Récupérer les déchets du technicien connecté"""
+        if not request.user.is_technicien:
+            return Response(
+                {'error': 'Accès refusé'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        dechets = Dechet.objects.filter(
+            technicien=request.user
+        ).select_related('collecte')
+        
+        serializer = self.get_serializer(dechets, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def disponibles(self, request):
+        """Récupérer les déchets disponibles pour assignation"""
+        if not request.user.is_technicien:
+            return Response(
+                {'error': 'Accès refusé'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        dechets = Dechet.objects.filter(
+            technicien__isnull=True,
+            etat='COLLECTE'
+        ).select_related('collecte')
+        
+        serializer = self.get_serializer(dechets, many=True)
+        return Response(serializer.data)
+        
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def dashboard_stats(request):
@@ -634,3 +762,378 @@ def formulaires_a_verifier(request):
         formulaires_data.append(formulaire_info)
     
     return Response(formulaires_data)
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def dechets_technicien(request):
+    """
+    Récupère les déchets pour le technicien connecté
+    """
+    user = request.user
+    
+    if not user.is_technicien:
+        return Response(
+            {'error': 'Accès refusé. Seuls les techniciens peuvent accéder à cette ressource.'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    # Organiser les déchets par statut
+    dechets_data = {
+        'nouveau': [],  # Déchets non assignés
+        'en_cours': [],  # Déchets assignés au technicien
+        'termines': []   # Déchets valorisés par le technicien
+    }
+    
+    # Déchets non assignés (disponibles)
+    dechets_disponibles = Dechet.objects.filter(
+        technicien__isnull=True,
+        etat='COLLECTE'
+    ).select_related('collecte', 'collecte__utilisateur', 'collecte__formulaire_origine')
+    
+    # Déchets assignés au technicien
+    mes_dechets = Dechet.objects.filter(
+        technicien=user
+    ).select_related('collecte', 'collecte__utilisateur', 'collecte__formulaire_origine')
+    
+    # Traiter les déchets disponibles
+    for dechet in dechets_disponibles:
+        collecte = dechet.collecte
+        dechets_data['nouveau'].append({
+            'id': dechet.id,
+            'type': dechet.type,
+            'categorie': dechet.categorie,
+            'description': dechet.description,
+            'quantite': dechet.quantite,
+            'etat': dechet.etat,
+            'etat_display': dechet.get_etat_display(),
+            'created_at': dechet.created_at,
+            'collecte': {
+                'id': collecte.id,
+                'reference': collecte.reference,
+                'date_collecte': collecte.date_collecte,
+                'utilisateur': {
+                    'nom': collecte.utilisateur.get_full_name() or collecte.utilisateur.username,
+                    'email': collecte.utilisateur.email
+                }
+            }
+        })
+    
+    # Traiter mes déchets
+    for dechet in mes_dechets:
+        collecte = dechet.collecte
+        dechet_info = {
+            'id': dechet.id,
+            'type': dechet.type,
+            'categorie': dechet.categorie,
+            'description': dechet.description,
+            'quantite': dechet.quantite,
+            'etat': dechet.etat,
+            'etat_display': dechet.get_etat_display(),
+            'created_at': dechet.created_at,
+            'date_traitement': dechet.date_traitement,
+            'collecte': {
+                'id': collecte.id,
+                'reference': collecte.reference,
+                'date_collecte': collecte.date_collecte,
+                'utilisateur': {
+                    'nom': collecte.utilisateur.get_full_name() or collecte.utilisateur.username,
+                    'email': collecte.utilisateur.email
+                }
+            }
+        }
+        
+        if dechet.etat in ['RECYCLE', 'DETRUIT']:
+            dechets_data['termines'].append(dechet_info)
+        else:
+            dechets_data['en_cours'].append(dechet_info)
+    
+    return Response(dechets_data)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def historique_dechets(request):
+    """
+    Récupère l'historique des déchets pour le particulier connecté
+    """
+    user = request.user
+    
+    # Récupérer tous les déchets des collectes de l'utilisateur
+    dechets = Dechet.objects.filter(
+        collecte__utilisateur=user
+    ).select_related('collecte', 'technicien').order_by('-created_at')
+    
+    dechets_data = []
+    for dechet in dechets:
+        collecte = dechet.collecte
+        dechets_data.append({
+            'id': dechet.id,
+            'type': dechet.type,
+            'categorie': dechet.categorie,
+            'description': dechet.description,
+            'quantite': dechet.quantite,
+            'etat': dechet.etat,
+            'etat_display': dechet.get_etat_display(),
+            'created_at': dechet.created_at,
+            'date_traitement': dechet.date_traitement,
+            'collecte': {
+                'id': collecte.id,
+                'reference': collecte.reference,
+                'date_collecte': collecte.date_collecte
+            },
+            'technicien': {
+                'nom': dechet.technicien.get_full_name() if dechet.technicien else None,
+                'email': dechet.technicien.email if dechet.technicien else None
+            } if dechet.technicien else None
+        })
+    
+    return Response(dechets_data)
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def dechets_recus_technicien(request):
+    """
+    Récupère les déchets des collectes terminées disponibles pour valorisation
+    """
+    user = request.user
+    
+    if not user.is_technicien:
+        return Response(
+            {'error': 'Accès refusé. Seuls les techniciens peuvent accéder à cette ressource.'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    # Récupérer les déchets des collectes terminées qui ne sont pas encore traités
+    dechets_recus = Dechet.objects.filter(
+        collecte__statut='TERMINEE',  # Collecte livrée par le transporteur
+        etat='COLLECTE',  # Déchet pas encore traité
+        technicien__isnull=True  # Pas encore assigné à un technicien
+    ).select_related(
+        'collecte__utilisateur',
+        'collecte__transporteur'
+    ).order_by('-collecte__date_prevue')
+    
+    # Serializer les données
+    dechets_data = []
+    for dechet in dechets_recus:
+        collecte = dechet.collecte
+        dechet_info = {
+            'id': dechet.id,
+            'type': dechet.type,
+            'categorie': dechet.categorie,
+            'description': dechet.description,
+            'quantite': dechet.quantite,
+            'etat': dechet.etat,
+            'etat_display': dechet.get_etat_display(),
+            'photo_avant': dechet.photo_avant.url if dechet.photo_avant else None,
+            'collecte': {
+                'id': collecte.id,
+                'reference': collecte.reference,
+                'date_collecte': collecte.date_collecte,
+                'date_prevue': collecte.date_prevue,
+                'adresse': collecte.adresse,
+                'utilisateur': {
+                    'nom': collecte.utilisateur.get_full_name() or collecte.utilisateur.username,
+                    'role': collecte.utilisateur.role,
+                    'company_name': getattr(collecte.utilisateur, 'company_name', None)
+                },
+                'transporteur': {
+                    'nom': collecte.transporteur.get_full_name() or collecte.transporteur.username if collecte.transporteur else 'N/A'
+                }
+            },
+            'date_reception': collecte.updated_at,  # Date de dernière mise à jour (livraison)
+        }
+        dechets_data.append(dechet_info)
+    
+    return Response({
+        'dechets': dechets_data,
+        'total': len(dechets_data),
+        'status': 'success'
+    })
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def demarrer_valorisation(request, dechet_id):
+    """
+    Démarre le processus de valorisation d'un déchet par un technicien
+    """
+    user = request.user
+    
+    if not user.is_technicien:
+        return Response(
+            {'error': 'Accès refusé. Seuls les techniciens peuvent valoriser.'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    try:
+        dechet = Dechet.objects.get(
+            id=dechet_id,
+            collecte__statut='TERMINEE',  # Collecte doit être terminée
+            etat='COLLECTE',  # Déchet pas encore traité
+            technicien__isnull=True  # Pas encore assigné
+        )
+    except Dechet.DoesNotExist:
+        return Response(
+            {'error': 'Déchet non trouvé ou non disponible pour valorisation.'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    # Assigner le technicien et changer l'état
+    dechet.technicien = user
+    dechet.etat = 'TRI'  # Commence le tri
+    dechet.save()
+    
+    return Response({
+        'message': 'Valorisation démarrée avec succès',
+        'dechet': {
+            'id': dechet.id,
+            'type': dechet.type,
+            'etat': dechet.etat,
+            'technicien': user.get_full_name() or user.username
+        }
+    })
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def valoriser_dechet_complet(request, dechet_id):
+    """
+    Finalise la valorisation d'un déchet avec le formulaire de valorisation
+    """
+    user = request.user
+    
+    if not user.is_technicien:
+        return Response(
+            {'error': 'Accès refusé. Seuls les techniciens peuvent valoriser.'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    try:
+        dechet = Dechet.objects.get(
+            id=dechet_id,
+            technicien=user,  # Doit être assigné au technicien connecté
+            etat='TRI'  # Doit être en cours de tri
+        )
+    except Dechet.DoesNotExist:
+        return Response(
+            {'error': 'Déchet non trouvé ou non autorisé.'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    # Récupérer les données du formulaire
+    type_valorisation = request.data.get('type_valorisation')  # 'A_RECYCLER' ou 'A_DETRUIRE'
+    quantite_valorisee = request.data.get('quantite_valorisee')
+    rendement = request.data.get('rendement')
+    methode_valorisation = request.data.get('methode_valorisation')
+    notes_technicien = request.data.get('notes_technicien')
+    photo_apres = request.FILES.get('photo_apres')
+    
+    # Validations
+    if not type_valorisation or type_valorisation not in ['A_RECYCLER', 'A_DETRUIRE']:
+        return Response(
+            {'error': 'Type de valorisation requis (A_RECYCLER ou A_DETRUIRE)'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    if not quantite_valorisee or float(quantite_valorisee) <= 0:
+        return Response(
+            {'error': 'Quantité valorisée requise et doit être positive'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    if float(quantite_valorisee) > dechet.quantite:
+        return Response(
+            {'error': 'Quantité valorisée ne peut pas dépasser la quantité collectée'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Mettre à jour le déchet
+    dechet.etat = type_valorisation
+    dechet.quantite = float(quantite_valorisee)  # Quantité effective valorisée
+    dechet.date_traitement = timezone.now()
+    
+    if photo_apres:
+        dechet.photo_apres = photo_apres
+    
+    # Ajouter les notes dans la description (ou créer un nouveau champ si nécessaire)
+    valorisation_info = f"""
+VALORISATION EFFECTUÉE LE {timezone.now().strftime('%d/%m/%Y à %H:%M')}
+Technicien: {user.get_full_name() or user.username}
+Méthode: {methode_valorisation or 'Non spécifiée'}
+Rendement: {rendement or 'Non spécifié'}%
+Quantité valorisée: {quantite_valorisee} kg sur {dechet.quantite} kg collectées
+Notes: {notes_technicien or 'Aucune note'}
+---
+{dechet.description or ''}
+    """.strip()
+    
+    dechet.description = valorisation_info
+    dechet.save()
+    
+    return Response({
+        'message': 'Valorisation finalisée avec succès',
+        'dechet': {
+            'id': dechet.id,
+            'type': dechet.type,
+            'etat': dechet.etat,
+            'etat_display': dechet.get_etat_display(),
+            'quantite_valorisee': quantite_valorisee,
+            'date_traitement': dechet.date_traitement,
+            'technicien': user.get_full_name() or user.username
+        }
+    })
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def dechets_en_cours_technicien(request):
+    """
+    Récupère les déchets en cours de traitement par le technicien connecté
+    """
+    user = request.user
+    
+    if not user.is_technicien:
+        return Response(
+            {'error': 'Accès refusé. Seuls les techniciens peuvent accéder à cette ressource.'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    # Récupérer les déchets en cours de traitement par ce technicien
+    dechets_en_cours = Dechet.objects.filter(
+        technicien=user,
+        etat='TRI'  # En cours de tri
+    ).select_related('collecte__utilisateur').order_by('-updated_at')
+    
+    serializer = DechetSerializer(dechets_en_cours, many=True)
+    return Response({
+        'dechets': serializer.data,
+        'total': len(serializer.data)
+    })
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def dechets_valorises_technicien(request):
+    """
+    Récupère l'historique des déchets valorisés par le technicien connecté
+    """
+    user = request.user
+    
+    if not user.is_technicien:
+        return Response(
+            {'error': 'Accès refusé. Seuls les techniciens peuvent accéder à cette ressource.'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    # Récupérer les déchets valorisés par ce technicien
+    dechets_valorises = Dechet.objects.filter(
+        technicien=user,
+        etat__in=['A_RECYCLER', 'RECYCLE', 'A_DETRUIRE', 'DETRUIT']
+    ).select_related('collecte__utilisateur').order_by('-date_traitement')
+    
+    serializer = DechetSerializer(dechets_valorises, many=True)
+    return Response({
+        'dechets': serializer.data,
+        'total': len(serializer.data)
+    })

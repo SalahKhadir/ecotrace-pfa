@@ -254,9 +254,10 @@ export const wasteService = {
     const response = await api.post(`/waste/collectes/${collecteId}/assigner_transporteur/`, data);
     return response.data;
   },
-  
-  changerStatutCollecte: async (collecteId, statut) => {
-    const response = await api.post(`/waste/collectes/${collecteId}/changer_statut/`, { statut });
+    changerStatutCollecte: async (collecteId, payload) => {
+    // Si payload est juste un string (ancien format), le convertir
+    const data = typeof payload === 'string' ? { statut: payload } : payload;
+    const response = await api.post(`/waste/collectes/${collecteId}/changer_statut/`, data);
     return response.data;
   },
   
@@ -303,7 +304,96 @@ export const wasteService = {
   getFormulairesTransporteur: async () => {
     const response = await api.get('/waste/transporteur/formulaires/');
     return response.data;
+  },  // Méthodes spécifiques pour les techniciens
+  getDechetsTechinicien: async () => {
+    const response = await api.get('/waste/technicien/dechets/');
+    return response.data;
   },
+  
+  // Nouvelles méthodes pour le workflow technicien
+  getDechetsRecus: async () => {
+    const response = await api.get('/waste/technicien/dechets-recus/');
+    return response.data;
+  },
+  
+  getDechetsEnCours: async () => {
+    const response = await api.get('/waste/technicien/dechets-en-cours/');
+    return response.data;
+  },
+  
+  getDechetsValorises: async () => {
+    const response = await api.get('/waste/technicien/dechets-valorises/');
+    return response.data;
+  },
+  
+  demarrerValorisation: async (dechetId) => {
+    const response = await api.post(`/waste/technicien/demarrer-valorisation/${dechetId}/`);
+    return response.data;
+  },
+  
+  valoriserDechetComplet: async (dechetId, valorisationData) => {
+    const formData = new FormData();
+    Object.keys(valorisationData).forEach(key => {
+      if (valorisationData[key] !== null && valorisationData[key] !== undefined) {
+        formData.append(key, valorisationData[key]);
+      }
+    });
+    
+    const response = await api.post(`/waste/technicien/valoriser-dechet/${dechetId}/`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      }
+    });
+    return response.data;
+  },
+  
+  getStatsTechnicien: async () => {
+    try {
+      const [dechetsRecus, dechetsEnCours, dechetsValorises] = await Promise.all([
+        wasteService.getDechetsRecus(),
+        wasteService.getDechetsEnCours(),
+        wasteService.getDechetsValorises()
+      ]);
+
+      return {
+        dechets_recus: dechetsRecus.total || 0,
+        dechets_en_cours: dechetsEnCours.total || 0,
+        dechets_valorises: dechetsValorises.total || 0,
+        dechets_recycles: dechetsValorises.dechets?.filter(d => 
+          d.etat === 'A_RECYCLER' || d.etat === 'RECYCLE'
+        ).length || 0,
+        dechets_detruits: dechetsValorises.dechets?.filter(d => 
+          d.etat === 'A_DETRUIRE' || d.etat === 'DETRUIT'
+        ).length || 0
+      };
+    } catch (error) {
+      console.error('Erreur récupération stats technicien:', error);
+      return {
+        dechets_recus: 0,
+        dechets_en_cours: 0,
+        dechets_valorises: 0,
+        dechets_recycles: 0,
+        dechets_detruits: 0
+      };
+    }
+  },
+  
+  valoriserDechet: async (dechetId, etat) => {
+    const response = await api.post(`/waste/dechets/${dechetId}/valoriser/`, { etat });
+    return response.data;
+  },
+  
+  assignerDechetTechnicien: async (dechetId, technicienId = null) => {
+    const data = technicienId ? { technicien_id: technicienId } : {};
+    const response = await api.post(`/waste/dechets/${dechetId}/assigner_technicien/`, data);
+    return response.data;
+  },
+  
+  // Historique des déchets pour les particuliers
+  getHistoriqueDechets: async () => {
+    const response = await api.get('/waste/historique-dechets/');
+    return response.data;
+  }
 };
 
 export default api;

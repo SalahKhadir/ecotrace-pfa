@@ -65,41 +65,76 @@ const TechnicienDashboard = () => {
     } catch (error) {
       console.error('Erreur utilisateur:', error);
     }
-  };
-
-  const loadStats = async () => {
+  };  const loadStats = async () => {
     try {
-      const data = await wasteService.getDashboardStats();
-      setStats(data);
+      const stats = await wasteService.getStatsTechnicien();
+      setStats(stats);
     } catch (error) {
       console.error('Erreur stats:', error);
-      // Données simulées pour les stats
+      // Données par défaut en cas d'erreur
       setStats({
-        dechets_recus: 45,
-        en_valorisation: 12,
-        valorises: 28,
-        taux_valorisation: 85
+        dechets_recus: 0,
+        dechets_en_cours: 0,
+        dechets_valorises: 0,
+        dechets_recycles: 0,
+        dechets_detruits: 0
       });
     }
-  };
-
-  const loadDechetsRecus = async () => {
+  };  const loadDechetsRecus = async () => {
     try {
-      // Charger les déchets livrés par les transporteurs
-      const validatedCollections = JSON.parse(localStorage.getItem('validatedCollections') || '[]');
-      const dechetsLivres = validatedCollections.filter(c => c.statut === 'livre');
-      setDechetsRecus(dechetsLivres);
+      const [dechetsRecus, dechetsEnCours, dechetsValorises] = await Promise.all([
+        wasteService.getDechetsRecus(),
+        wasteService.getDechetsEnCours(),
+        wasteService.getDechetsValorises()
+      ]);
+      
+      // Organiser les déchets par statut
+      const tousLesDechets = [
+        ...(dechetsRecus.dechets || []).map(d => ({ ...d, statut: 'nouveau', actionDisponible: true })),
+        ...(dechetsEnCours.dechets || []).map(d => ({ ...d, statut: 'en_cours', actionDisponible: true })),
+        ...(dechetsValorises.dechets || []).map(d => ({ ...d, statut: 'termine', actionDisponible: false }))
+      ];
+      
+      setDechetsRecus(tousLesDechets);
     } catch (error) {
       console.error('Erreur déchets reçus:', error);
+      setDechetsRecus([]);
     }
-  };
-
-  const loadProcessusValorisation = async () => {
+  };  const loadProcessusValorisation = async () => {
     try {
-      const processus = JSON.parse(localStorage.getItem('processusValorisation') || '[]');
+      const [dechetsEnCours, dechetsValorises] = await Promise.all([
+        wasteService.getDechetsEnCours(),
+        wasteService.getDechetsValorises()
+      ]);
+      
+      // Créer des processus basés sur les déchets en cours et terminés
+      const processus = [
+        ...(dechetsEnCours.dechets || []).map(d => ({
+          id: `process_${d.id}`,
+          dechetId: d.id,
+          typeValorisation: d.etat_display || d.etat,
+          statut: 'en_cours',
+          dateDebut: d.date_traitement || d.created_at,
+          dateFin: null,
+          dechetDetails: d,
+          rendement: null
+        })),
+        ...(dechetsValorises.dechets || []).map(d => ({
+          id: `process_${d.id}`,
+          dechetId: d.id,
+          typeValorisation: d.etat_display || d.etat,
+          statut: 'termine',
+          dateDebut: d.date_traitement || d.created_at,
+          dateFin: d.date_traitement,
+          dechetDetails: d,
+          rendement: 85 // Mock rendement
+        }))
+      ];
+      
       setProcessusValorisation(processus);
     } catch (error) {
       console.error('Erreur processus valorisation:', error);
+      setProcessusValorisation([]);
     }
   };
 
@@ -138,81 +173,82 @@ const TechnicienDashboard = () => {
       console.error('Erreur déconnexion:', error);
       navigate('/');
     }
-  };
-
-  const commencerValorisation = (dechet) => {
-    setSelectedDechet(dechet);
-    setValorisationData({
-      typeValorisation: '',
-      quantiteValorisee: '',
-      rendement: '',
-      notes: ''
-    });
-    setShowValorisationModal(true);
-  };
-
-  const validerValorisation = async () => {
+  };  const commencerValorisation = async (dechet) => {
     try {
-      if (!valorisationData.typeValorisation || !valorisationData.quantiteValorisee) {
-        alert('Veuillez remplir tous les champs obligatoires');
+      if (dechet.statut === 'nouveau') {
+        // D'abord démarrer la valorisation (assigner au technicien)
+        await wasteService.demarrerValorisation(dechet.id);
+      }
+      
+      setSelectedDechet(dechet);      setValorisationData({
+        typeValorisation: 'A_RECYCLER', // Valeur par défaut
+        quantiteValorisee: dechet.quantite || '',
+        rendement: '85',
+        notes: ''
+      });
+      setShowValorisationModal(true);
+    } catch (error) {
+      console.error('Erreur démarrage valorisation:', error);
+      alert('Erreur lors du démarrage de la valorisation: ' + (error.response?.data?.error || error.message));
+    }
+  };  const validerValorisation = async () => {
+    try {
+      if (!valorisationData.typeValorisation) {
+        alert('Veuillez sélectionner un type de valorisation');
         return;
       }
 
-      const processus = {
-        id: Date.now().toString(),
-        dechetId: selectedDechet.id,
-        dechetDetails: selectedDechet,
-        typeValorisation: valorisationData.typeValorisation,
-        quantiteValorisee: valorisationData.quantiteValorisee,
-        rendement: valorisationData.rendement,
-        notes: valorisationData.notes,
-        statut: 'en_cours',
-        dateDebut: new Date().toISOString(),
-        technicienId: user.id
+      // Préparer les données de valorisation
+      const formData = {
+        type_valorisation: valorisationData.typeValorisation,
+        quantite_valorisee: valorisationData.quantiteValorisee || selectedDechet.quantite,
+        rendement: valorisationData.rendement || '',
+        methode_valorisation: valorisationData.typeValorisation === 'A_RECYCLER' ? 'Recyclage' : 'Destruction',
+        notes_technicien: valorisationData.notes || ''
       };
 
-      // Sauvegarder le processus
-      const processusExistants = JSON.parse(localStorage.getItem('processusValorisation') || '[]');
-      processusExistants.push(processus);
-      localStorage.setItem('processusValorisation', JSON.stringify(processusExistants));
-
-      // Mettre à jour le statut du déchet
-      const validatedCollections = JSON.parse(localStorage.getItem('validatedCollections') || '[]');
-      const updatedCollections = validatedCollections.map(c => 
-        c.id === selectedDechet.id 
-          ? { ...c, statut: 'en_valorisation', dateDebutValorisation: new Date().toISOString() }
-          : c
-      );
-      localStorage.setItem('validatedCollections', JSON.stringify(updatedCollections));
+      // Utiliser l'API pour finaliser la valorisation
+      await wasteService.valoriserDechetComplet(selectedDechet.id, formData);
 
       setShowValorisationModal(false);
-      await loadDechetsRecus();
-      await loadProcessusValorisation();
       
-      alert('Processus de valorisation démarré avec succès !');
+      // Recharger les données
+      await Promise.all([
+        loadDechetsRecus(),
+        loadProcessusValorisation(),
+        loadStats()
+      ]);
+      
+      alert('Valorisation effectuée avec succès !');
     } catch (error) {
       console.error('Erreur valorisation:', error);
-      alert('Erreur lors du démarrage de la valorisation');
+      alert('Erreur lors de la valorisation: ' + (error.response?.data?.error || error.message));
     }
   };
-
   const terminerProcessus = async (processusId) => {
     try {
-      const processusExistants = JSON.parse(localStorage.getItem('processusValorisation') || '[]');
-      const updatedProcessus = processusExistants.map(p => 
-        p.id === processusId 
-          ? { ...p, statut: 'termine', dateFin: new Date().toISOString() }
-          : p
-      );
-      localStorage.setItem('processusValorisation', JSON.stringify(updatedProcessus));
+      // Extraire l'ID du déchet du processusId
+      const dechetId = processusId.replace('process_', '');
+      
+      // Finaliser la valorisation (marquer comme recyclé ou détruit selon le type)
+      const processus = processusValorisation.find(p => p.id === processusId);
+      const etatFinal = processus?.typeValorisation?.includes('RECYCL') ? 'RECYCLE' : 'DETRUIT';
+      
+      await wasteService.valoriserDechet(dechetId, etatFinal);
 
-      await loadProcessusValorisation();
+      // Recharger les données
+      await Promise.all([
+        loadDechetsRecus(),
+        loadProcessusValorisation(),
+        loadStats()
+      ]);
+      
       alert('Processus de valorisation terminé !');
     } catch (error) {
       console.error('Erreur terminer processus:', error);
+      alert('Erreur lors de la finalisation: ' + (error.response?.data?.error || error.message));
     }
   };
-
   const getFilteredDechets = () => {
     if (dechetFilter === 'tous') return dechetsRecus;
     return dechetsRecus.filter(d => d.statut === dechetFilter);
@@ -239,11 +275,10 @@ const TechnicienDashboard = () => {
             <div className="stat-label">Déchets Reçus</div>
           </div>
         </div>
-        
-        <div className="stat-card">
+          <div className="stat-card">
           <div className="stat-icon">⚙️</div>
           <div className="stat-content">
-            <div className="stat-number">{stats.en_valorisation || 0}</div>
+            <div className="stat-number">{stats.dechets_en_cours || 0}</div>
             <div className="stat-label">En Valorisation</div>
           </div>
         </div>
@@ -251,7 +286,7 @@ const TechnicienDashboard = () => {
         <div className="stat-card">
           <div className="stat-icon">♻️</div>
           <div className="stat-content">
-            <div className="stat-number">{stats.valorises || 0}</div>
+            <div className="stat-number">{stats.dechets_valorises || 0}</div>
             <div className="stat-label">Valorisés</div>
           </div>
         </div>
@@ -259,8 +294,10 @@ const TechnicienDashboard = () => {
         <div className="stat-card">
           <div className="stat-icon">📊</div>
           <div className="stat-content">
-            <div className="stat-number">{stats.taux_valorisation || 0}%</div>
-            <div className="stat-label">Taux de Valorisation</div>
+            <div className="stat-number">
+              {stats.dechets_recycles || 0}/{stats.dechets_detruits || 0}
+            </div>
+            <div className="stat-label">Recyclés/Détruits</div>
           </div>
         </div>
       </div>
@@ -298,11 +335,10 @@ const TechnicienDashboard = () => {
             .filter(p => p.statut === 'en_cours')
             .slice(0, 3)
             .map(processus => (
-              <div key={processus.id} className="urgent-item">
-                <div className="urgent-info">
+              <div key={processus.id} className="urgent-item">                <div className="urgent-info">
                   <span className="urgent-ref">{processus.typeValorisation}</span>
                   <span className="urgent-date">
-                    {processus.dechetDetails?.formDetails?.entrepriseNom}
+                    {processus.dechetDetails?.collecte?.utilisateur?.nom || 'Utilisateur inconnu'}
                   </span>
                 </div>
                 <button 
@@ -317,7 +353,6 @@ const TechnicienDashboard = () => {
       </div>
     </div>
   );
-
   const renderDechets = () => (
     <div className="dechets-section">
       <div className="section-header">
@@ -334,8 +369,9 @@ const TechnicienDashboard = () => {
             onChange={(e) => setDechetFilter(e.target.value)}
           >
             <option value="tous">Tous</option>
-            <option value="livre">Livrés</option>
-            <option value="en_valorisation">En valorisation</option>
+            <option value="nouveau">Nouveaux</option>
+            <option value="en_cours">En cours</option>
+            <option value="termine">Terminés</option>
           </select>
         </div>
       </div>
@@ -345,55 +381,62 @@ const TechnicienDashboard = () => {
         {getFilteredDechets().map(dechet => (
           <div key={dechet.id} className="dechet-card">
             <div className="card-header">
-              <h4>{dechet.formDetails?.entrepriseNom}</h4>
+              <h4>{dechet.collecte?.utilisateur?.nom || 'Utilisateur inconnu'}</h4>
               <span className={`status-badge ${dechet.statut}`}>
-                {dechet.statut === 'livre' ? 'Livré' : 'En valorisation'}
+                {dechet.statut === 'nouveau' ? 'Nouveau' : 
+                 dechet.statut === 'en_cours' ? 'En cours' : 'Terminé'}
               </span>
             </div>
             
             <div className="card-content">
               <div className="info-row">
                 <span className="label">Type de déchet:</span>
-                <span>{dechet.formDetails?.typeDechet}</span>
+                <span>{dechet.type}</span>
               </div>
               <div className="info-row">
-                <span className="label">Quantité collectée:</span>
-                <span>{dechet.quantiteCollectee} kg</span>
+                <span className="label">Catégorie:</span>
+                <span>{dechet.categorie}</span>
               </div>
               <div className="info-row">
-                <span className="label">Date livraison:</span>
-                <span>{new Date(dechet.dateLivraison).toLocaleDateString()}</span>
+                <span className="label">Quantité:</span>
+                <span>{dechet.quantite} kg</span>
               </div>
               <div className="info-row">
-                <span className="label">Transporteur:</span>
-                <span>Transport #{dechet.transporteurId}</span>
+                <span className="label">État:</span>
+                <span>{dechet.etat_display}</span>
               </div>
+              <div className="info-row">
+                <span className="label">Collecte:</span>
+                <span>{dechet.collecte?.reference}</span>
+              </div>
+              {dechet.description && (
+                <div className="info-row">
+                  <span className="label">Description:</span>
+                  <span>{dechet.description}</span>
+                </div>
+              )}
             </div>
             
             <div className="card-actions">
-              {dechet.statut === 'livre' && (
+              {dechet.actionDisponible && dechet.statut !== 'termine' && (
                 <button 
-                  className="btn-primary"
+                  className="btn-action primary"
                   onClick={() => commencerValorisation(dechet)}
                 >
-                  ♻️ Valoriser
+                  {dechet.statut === 'nouveau' ? 'Commencer Valorisation' : 'Continuer Valorisation'}
                 </button>
-              )}
-              {dechet.statut === 'en_valorisation' && (
-                <span className="processing-badge">En cours de valorisation</span>
               )}
             </div>
           </div>
         ))}
-      </div>
-
-      {getFilteredDechets().length === 0 && (
-        <div className="empty-state">
-          <div className="empty-icon">📦</div>
-          <h3>Aucun déchet reçu</h3>
-          <p>Aucun déchet ne correspond aux filtres sélectionnés.</p>
-        </div>
-      )}
+        
+        {getFilteredDechets().length === 0 && (
+          <div className="empty-state">
+            <div className="empty-icon">📦</div>
+            <h3>Aucun déchet reçu</h3>
+            <p>Aucun déchet ne correspond aux filtres sélectionnés.</p>
+          </div>
+        )}      </div>
 
       {/* Modal de valorisation */}
       {showValorisationModal && selectedDechet && (
@@ -408,24 +451,30 @@ const TechnicienDashboard = () => {
                 ✕
               </button>
             </div>
-            
-            <div className="modal-body">
+              <div className="modal-body">
               <div className="valorisation-details">
                 <div className="detail-item">
-                  <span className="label">Entreprise:</span>
-                  <span>{selectedDechet.formDetails?.entrepriseNom}</span>
+                  <span className="label">Utilisateur:</span>
+                  <span>{selectedDechet.collecte?.utilisateur?.nom || 'Utilisateur inconnu'}</span>
                 </div>
                 <div className="detail-item">
                   <span className="label">Type de déchet:</span>
-                  <span>{selectedDechet.formDetails?.typeDechet}</span>
+                  <span>{selectedDechet.type}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="label">Catégorie:</span>
+                  <span>{selectedDechet.categorie}</span>
                 </div>
                 <div className="detail-item">
                   <span className="label">Quantité disponible:</span>
-                  <span>{selectedDechet.quantiteCollectee} kg</span>
+                  <span>{selectedDechet.quantite} kg</span>
+                </div>
+                <div className="detail-item">
+                  <span className="label">État actuel:</span>
+                  <span>{selectedDechet.etat_display}</span>
                 </div>
               </div>
-              
-              <div className="form-group">
+                <div className="form-group">
                 <label>Type de valorisation *:</label>
                 <select
                   value={valorisationData.typeValorisation}
@@ -436,15 +485,13 @@ const TechnicienDashboard = () => {
                   required
                 >
                   <option value="">Sélectionner un type</option>
-                  <option value="recyclage">Recyclage</option>
-                  <option value="compostage">Compostage</option>
-                  <option value="valorisation_energetique">Valorisation énergétique</option>
-                  <option value="reparation">Réparation/Réutilisation</option>
+                  <option value="A_RECYCLER">Préparer pour recyclage</option>
+                  <option value="A_DETRUIRE">Préparer pour destruction</option>
                 </select>
               </div>
               
               <div className="form-group">
-                <label>Quantité à valoriser (kg) *:</label>
+                <label>Quantité valorisée (kg):</label>
                 <input
                   type="number"
                   value={valorisationData.quantiteValorisee}
@@ -452,9 +499,8 @@ const TechnicienDashboard = () => {
                     ...valorisationData,
                     quantiteValorisee: e.target.value
                   })}
-                  max={selectedDechet.quantiteCollectee}
                   placeholder="Quantité en kg"
-                  required
+                  max={selectedDechet.quantite}
                 />
               </div>
               
@@ -467,7 +513,7 @@ const TechnicienDashboard = () => {
                     ...valorisationData,
                     rendement: e.target.value
                   })}
-                  placeholder="Pourcentage de rendement"
+                  placeholder="Pourcentage"
                   min="0"
                   max="100"
                 />
@@ -527,15 +573,13 @@ const TechnicienDashboard = () => {
             <option value="termine">Terminés</option>
           </select>
         </div>
-      </div>
-
-      {/* Tableau des processus */}
+      </div>      {/* Tableau des processus */}
       <div className="processus-table">
         <div className="table-header">
-          <div className="table-cell">Entreprise</div>
-          <div className="table-cell">Type Valorisation</div>
+          <div className="table-cell">Utilisateur</div>
+          <div className="table-cell">Type Déchet</div>
           <div className="table-cell">Quantité</div>
-          <div className="table-cell">Rendement</div>
+          <div className="table-cell">État Valorisation</div>
           <div className="table-cell">Date Début</div>
           <div className="table-cell">Statut</div>
           <div className="table-cell">Actions</div>
@@ -544,16 +588,16 @@ const TechnicienDashboard = () => {
         {getFilteredProcessus().map(processus => (
           <div key={processus.id} className="table-row">
             <div className="table-cell">
-              <strong>{processus.dechetDetails?.formDetails?.entrepriseNom}</strong>
+              <strong>{processus.dechetDetails?.collecte?.utilisateur?.nom || 'Utilisateur inconnu'}</strong>
+            </div>
+            <div className="table-cell">
+              {processus.dechetDetails?.type}
+            </div>
+            <div className="table-cell">
+              {processus.dechetDetails?.quantite} kg
             </div>
             <div className="table-cell">
               {processus.typeValorisation}
-            </div>
-            <div className="table-cell">
-              {processus.quantiteValorisee} kg
-            </div>
-            <div className="table-cell">
-              {processus.rendement}%
             </div>
             <div className="table-cell">
               {new Date(processus.dateDebut).toLocaleDateString()}

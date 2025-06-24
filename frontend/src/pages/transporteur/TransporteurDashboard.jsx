@@ -18,15 +18,16 @@ const TransporteurDashboard = () => {
   // États pour la modal
   const [selectedFormulaire, setSelectedFormulaire] = useState(null);
   const [showFormulaireModal, setShowFormulaireModal] = useState(false);
-  
-  // États pour la confirmation
+    // États pour la confirmation
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [selectedCollecte, setSelectedCollecte] = useState(null);
   const [confirmationType, setConfirmationType] = useState('reception'); // reception ou emission
   const [confirmationData, setConfirmationData] = useState({
     notes: '',
-    photo: null
-  });  // Filtres
+    photo: null,
+    quantite_reelle: '',
+    dechets_supplementaires: []
+  });// Filtres
   const [formulaireFilter, setFormulaireFilter] = useState('tous');
   const [collecteFilter, setCollecteFilter] = useState('assignees');
   const [dateFilter, setDateFilter] = useState('tous'); // nouveau filtre par date
@@ -162,11 +163,15 @@ const TransporteurDashboard = () => {
       alert('Erreur lors de l\'assignation');
     }
   };
-
   const confirmerReceptionEmission = (collecte, type) => {
     setSelectedCollecte(collecte);
     setConfirmationType(type);
-    setConfirmationData({ notes: '', photo: null });
+    setConfirmationData({ 
+      notes: '', 
+      photo: null,
+      quantite_reelle: collecte.formulaire_origine?.quantite_estimee || '',
+      dechets_supplementaires: []
+    });
     setShowConfirmationModal(true);
   };
 
@@ -174,17 +179,55 @@ const TransporteurDashboard = () => {
     try {
       const nouveauStatut = confirmationType === 'reception' ? 'EN_COURS' : 'TERMINEE';
       
-      await wasteService.changerStatutCollecte(selectedCollecte.id, nouveauStatut);
+      // Pour la livraison, inclure les informations sur les déchets
+      const payload = {
+        statut: nouveauStatut,
+        notes: confirmationData.notes
+      };
+      
+      if (confirmationType === 'emission') {
+        payload.quantite_reelle = confirmationData.quantite_reelle;
+        payload.dechets_supplementaires = confirmationData.dechets_supplementaires;
+      }
+      
+      await wasteService.changerStatutCollecte(selectedCollecte.id, payload);
 
       setShowConfirmationModal(false);
       await loadCollectes();
       
-      const action = confirmationType === 'reception' ? 'réception' : 'émission';
-      alert(`${action} confirmée avec succès !`);
+      const action = confirmationType === 'reception' ? 'réception' : 'livraison';
+      alert(`${action} confirmée avec succès !${confirmationType === 'emission' ? ' Les déchets ont été transmis au technicien.' : ''}`);
     } catch (error) {
       console.error('Erreur confirmation:', error);
       alert('Erreur lors de la confirmation');
     }
+  };
+
+  const ajouterDechetSupplementaire = () => {
+    setConfirmationData({
+      ...confirmationData,
+      dechets_supplementaires: [
+        ...confirmationData.dechets_supplementaires,
+        { type: '', categorie: '', description: '', quantite: '' }
+      ]
+    });
+  };
+
+  const supprimerDechetSupplementaire = (index) => {
+    const nouveauxDechets = confirmationData.dechets_supplementaires.filter((_, i) => i !== index);
+    setConfirmationData({
+      ...confirmationData,
+      dechets_supplementaires: nouveauxDechets
+    });
+  };
+
+  const modifierDechetSupplementaire = (index, field, value) => {
+    const nouveauxDechets = [...confirmationData.dechets_supplementaires];
+    nouveauxDechets[index][field] = value;
+    setConfirmationData({
+      ...confirmationData,
+      dechets_supplementaires: nouveauxDechets
+    });
   };
   const getFilteredFormulaires = () => {
     let filtered = formulaires;
@@ -760,12 +803,10 @@ const TransporteurDashboard = () => {
           <h3>Aucune collecte assignée</h3>
           <p>Vous n'avez pas de collecte assignée pour le moment.</p>
         </div>
-      )}
-
-      {/* Modal de confirmation */}
+      )}      {/* Modal de confirmation */}
       {showConfirmationModal && selectedCollecte && (
         <div className="modal-overlay">
-          <div className="modal-content">
+          <div className="modal-content large">
             <div className="modal-header">
               <h3>
                 {confirmationType === 'reception' ? 'Confirmer la Réception' : 'Confirmer la Livraison'}
@@ -792,7 +833,95 @@ const TransporteurDashboard = () => {
                   <span className="label">Statut actuel:</span>
                   <span>{selectedCollecte.statut}</span>
                 </div>
+                {selectedCollecte.formulaire_origine && (
+                  <div className="detail-item">
+                    <span className="label">Type de déchets:</span>
+                    <span>{selectedCollecte.formulaire_origine.type_dechets}</span>
+                  </div>
+                )}
               </div>
+              
+              {confirmationType === 'emission' && (
+                <div className="dechets-section">
+                  <h4>📦 Détails des Déchets Collectés</h4>
+                  
+                  <div className="form-group">
+                    <label>Quantité réelle collectée:</label>
+                    <select
+                      value={confirmationData.quantite_reelle}
+                      onChange={(e) => setConfirmationData({
+                        ...confirmationData,
+                        quantite_reelle: e.target.value
+                      })}
+                      className="form-select"
+                    >
+                      <option value="1-5kg">1-5 kg</option>
+                      <option value="5-10kg">5-10 kg</option>
+                      <option value="10-20kg">10-20 kg</option>
+                      <option value="20kg+">Plus de 20 kg</option>
+                    </select>
+                  </div>
+                  
+                  <div className="dechets-supplementaires">
+                    <div className="dechets-header">
+                      <h5>Déchets supplémentaires trouvés</h5>
+                      <button 
+                        type="button"
+                        className="btn-add-dechet"
+                        onClick={ajouterDechetSupplementaire}
+                      >
+                        ➕ Ajouter un déchet
+                      </button>
+                    </div>
+                    
+                    {confirmationData.dechets_supplementaires.map((dechet, index) => (
+                      <div key={index} className="dechet-supplementaire">
+                        <div className="dechet-row">
+                          <select
+                            value={dechet.type}
+                            onChange={(e) => modifierDechetSupplementaire(index, 'type', e.target.value)}
+                            className="form-select small"
+                          >
+                            <option value="">Type de déchet</option>
+                            <option value="ordinateur">Ordinateur / Laptop</option>
+                            <option value="smartphone">Smartphone / Tablette</option>
+                            <option value="electromenager">Électroménager</option>
+                            <option value="televiseur">Téléviseur / Écran</option>
+                            <option value="composants">Composants électroniques</option>
+                            <option value="autres">Autres</option>
+                          </select>
+                          
+                          <input
+                            type="text"
+                            placeholder="Description"
+                            value={dechet.description}
+                            onChange={(e) => modifierDechetSupplementaire(index, 'description', e.target.value)}
+                            className="form-input small"
+                          />
+                          
+                          <input
+                            type="number"
+                            placeholder="Quantité (kg)"
+                            value={dechet.quantite}
+                            onChange={(e) => modifierDechetSupplementaire(index, 'quantite', e.target.value)}
+                            className="form-input small"
+                            min="0"
+                            step="0.1"
+                          />
+                          
+                          <button 
+                            type="button"
+                            className="btn-remove-dechet"
+                            onClick={() => supprimerDechetSupplementaire(index)}
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               
               <div className="form-group">
                 <label>Notes (optionnel):</label>
@@ -805,7 +934,7 @@ const TransporteurDashboard = () => {
                   placeholder={
                     confirmationType === 'reception' 
                       ? "Observations sur la réception..." 
-                      : "Observations sur la livraison..."
+                      : "Observations sur la livraison et l'état des déchets..."
                   }
                   rows="3"
                 />
@@ -823,7 +952,7 @@ const TransporteurDashboard = () => {
                 className="btn-primary"
                 onClick={validerConfirmation}
               >
-                {confirmationType === 'reception' ? 'Confirmer Réception' : 'Confirmer Livraison'}
+                {confirmationType === 'reception' ? 'Confirmer Réception' : 'Confirmer Livraison et Transmettre aux Techniciens'}
               </button>
             </div>
           </div>
