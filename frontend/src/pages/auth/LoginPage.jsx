@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../../services/api';
 import { ROLE_ROUTES } from '../../utils/constants';
+import Logo from '../../components/common/Logo';
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
@@ -88,10 +89,9 @@ const LoginPage = () => {
   return (
     <div className="login-container">
       <div className="login-card">
-        {/* Header */}
-        <div className="login-header">
+        {/* Header */}        <div className="login-header">
           <Link to="/" className="login-logo">
-            <h1 className="login-title">🌱 EcoTrace</h1>
+            <Logo size="large" className="login-logo" />
           </Link>
           <h2 className="login-subtitle">
             Connexion à votre compte

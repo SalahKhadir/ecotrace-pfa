@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { authService, userService, wasteService } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import { STATUS_LABELS, COLLECTE_STATUS } from '../../utils/constants';
+import Logo from '../../components/common/Logo';
 
 const ResponsableLogistiqueDashboard = () => {
   const navigate = useNavigate();
@@ -572,10 +573,9 @@ const ResponsableLogistiqueDashboard = () => {
   return (
     <div className="dashboard-container">
       {/* Header */}
-      <header className="dashboard-header">
-        <div className="dashboard-nav">
+      <header className="dashboard-header">        <div className="dashboard-nav">
           <div className="dashboard-logo">
-            <h1 className="dashboard-title">🌱 EcoTrace</h1>
+            <Logo className="dashboard-title" size="medium" showText={true} />
             <span className="badge-logistique">Responsable Logistique</span>
           </div>
           

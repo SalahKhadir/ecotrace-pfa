@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { authService, userService, wasteService } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
+import Logo from '../../components/common/Logo';
 import '../../styles/EntrepriseDashboard.css';
 
 const EntrepriseDashboard = () => {
@@ -134,10 +135,9 @@ const EntrepriseDashboard = () => {
   return (
     <div className="entreprise-dashboard">
       {/* Header */}
-      <header className="entreprise-header">
-        <div className="entreprise-header-content">
+      <header className="entreprise-header">        <div className="entreprise-header-content">
           <div className="entreprise-header-left">
-            <h1 className="entreprise-logo">🌱 EcoTrace</h1>
+            <Logo className="entreprise-logo" size="medium" showText={true} />
             <div className="entreprise-user-badge">
               <span className="entreprise-user-role">
                 🏢 Entreprise

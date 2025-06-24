@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { USER_ROLES, ROLE_LABELS } from '../utils/constants';
+import Logo from '../components/common/Logo';
 
 const Home = () => {
   return (
@@ -8,7 +9,7 @@ const Home = () => {
       <header className="home-header">
         <div className="home-nav">
           <div className="home-logo">
-            <h1 className="home-title">🌱 EcoTrace</h1>
+            <Logo size="large" className="home-logo" />
             <span className="home-subtitle">Gestion des déchets numériques</span>
           </div>
           <Link to="/login" className="home-login-btn">

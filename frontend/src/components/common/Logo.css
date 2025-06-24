@@ -1,0 +1,48 @@
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.logo-image {
+  height: auto;
+  object-fit: contain;
+}
+
+.logo-text {
+  font-weight: 600;
+  color: inherit;
+}
+
+/* Size variants */
+.logo-small .logo-image {
+  height: 48px;
+}
+
+.logo-small .logo-text {
+  font-size: 1rem;
+}
+
+.logo-medium .logo-image {
+  height: 65px;
+}
+
+.logo-medium .logo-text {
+  font-size: 1.25rem;
+}
+
+.logo-large .logo-image {
+  height: 70px;
+}
+
+.logo-large .logo-text {
+  font-size: 1.5rem;
+}
+
+.logo-xlarge .logo-image {
+  height: 100px;
+}
+
+.logo-xlarge .logo-text {
+  font-size: 2rem;
+}

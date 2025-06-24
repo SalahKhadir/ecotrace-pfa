@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { authService, userService, wasteService } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import { STATUS_LABELS } from '../../utils/constants';
+import Logo from '../../components/common/Logo';
 import '../../styles/TechnicienDashboard.css';
 
 const TechnicienDashboard = () => {
@@ -687,7 +688,7 @@ const TechnicienDashboard = () => {
       <header className="dashboard-header">
         <div className="dashboard-nav">
           <div className="dashboard-logo">
-            <h1 className="dashboard-title">🌱 EcoTrace</h1>
+            <Logo size="medium" className="dashboard-logo" />
             <span className="badge-technicien">Technicien</span>
           </div>
           
