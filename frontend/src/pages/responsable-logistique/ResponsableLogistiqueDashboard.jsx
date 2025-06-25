@@ -22,6 +22,7 @@ const ResponsableLogistiqueDashboard = () => {
   
   // États pour la planification
   const [showPlanificationModal, setShowPlanificationModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedFormulaire, setSelectedFormulaire] = useState(null);
   const [planificationData, setPlanificationData] = useState({
     date_collecte: '',
@@ -145,6 +146,12 @@ const ResponsableLogistiqueDashboard = () => {
     });
     setShowPlanificationModal(true);
   };
+
+  const voirDetailsFormulaire = (formulaire) => {
+    setSelectedFormulaire(formulaire);
+    setShowDetailsModal(true);
+  };
+
   const confirmerPlanification = async () => {
     try {
       // Créer la collecte avec transporteur assigné
@@ -334,6 +341,12 @@ const ResponsableLogistiqueDashboard = () => {
               
               <div className="card-actions">
                 <button 
+                  className="btn-secondary"
+                  onClick={() => voirDetailsFormulaire(formulaire)}
+                >
+                  👁️ Voir les détails
+                </button>
+                <button 
                   className="btn-primary"
                   onClick={() => planifierCollecte(formulaire.id)}
                 >
@@ -516,11 +529,6 @@ const ResponsableLogistiqueDashboard = () => {
             <div className="table-cell">
               {collecte.adresse || 'N/A'}
             </div>
-            <div className="table-cell">
-              <button className="btn-icon" title="Voir détails">
-                👁️
-              </button>
-            </div>
           </div>
         ))}</div>      {getFilteredCollectes().length === 0 && (
         <div className="empty-state">
@@ -666,6 +674,158 @@ const ResponsableLogistiqueDashboard = () => {
         {activeSection === 'rapports' && renderRapports()}
         {activeSection === 'notifications' && renderNotifications()}
       </main>
+
+      {/* Modal de détails du formulaire */}
+      {showDetailsModal && selectedFormulaire && (
+        <div className="modal-overlay">
+          <div className="modal-content large">
+            <div className="modal-header">
+              <h3>Détails du Formulaire - {selectedFormulaire.reference}</h3>
+              <button
+                className="modal-close"
+                onClick={() => setShowDetailsModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <div className="formulaire-details">
+                <div className="details-section">
+                  <h4>Informations Client</h4>
+                  <div className="details-grid">
+                    <div className="detail-item">
+                      <span className="label">Nom:</span>
+                      <span>{selectedFormulaire.utilisateur_nom || 'Non spécifié'}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="label">Email:</span>
+                      <span>{selectedFormulaire.email || 'Non spécifié'}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="label">Téléphone:</span>
+                      <span>{selectedFormulaire.telephone || 'Non spécifié'}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="label">Type de client:</span>
+                      <span>{selectedFormulaire.type_utilisateur || 'Non spécifié'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="details-section">
+                  <h4>Détails de la Collecte</h4>
+                  <div className="details-grid">
+                    <div className="detail-item">
+                      <span className="label">Type de déchets:</span>
+                      <span>{selectedFormulaire.type_dechets || 'Non spécifié'}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="label">Quantité estimée:</span>
+                      <span>{selectedFormulaire.quantite_estimee ? `${selectedFormulaire.quantite_estimee} kg` : 'Non spécifiée'}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="label">Mode de collecte:</span>
+                      <span>{selectedFormulaire.mode_collecte || 'Non spécifié'}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="label">Date souhaitée:</span>
+                      <span>{selectedFormulaire.date_souhaitee ? new Date(selectedFormulaire.date_souhaitee).toLocaleDateString('fr-FR') : 'Non spécifiée'}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="label">Urgence:</span>
+                      <span className={`urgence-badge ${selectedFormulaire.urgence || 'normale'}`}>
+                        {selectedFormulaire.urgence || 'Normale'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="details-section">
+                  <h4>Adresse de Collecte</h4>
+                  <p className="address-text">{selectedFormulaire.adresse_collecte || 'Non spécifiée'}</p>
+                </div>
+
+                {selectedFormulaire.description && (
+                  <div className="details-section">
+                    <h4>Description des Déchets</h4>
+                    <p className="description-text">{selectedFormulaire.description}</p>
+                  </div>
+                )}
+
+                {selectedFormulaire.instructions_speciales && (
+                  <div className="details-section">
+                    <h4>Instructions Spéciales</h4>
+                    <p className="instructions-text">{selectedFormulaire.instructions_speciales}</p>
+                  </div>
+                )}
+
+                <div className="details-section">
+                  <h4>Informations Administratives</h4>
+                  <div className="details-grid">
+                    <div className="detail-item">
+                      <span className="label">Statut:</span>
+                      <span className="status-badge valide">
+                        {selectedFormulaire.statut || 'Validé'}
+                      </span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="label">Date de création:</span>
+                      <span>{selectedFormulaire.date_creation ? new Date(selectedFormulaire.date_creation).toLocaleDateString('fr-FR') : 'Non spécifiée'}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="label">Date de validation:</span>
+                      <span>{selectedFormulaire.date_validation ? new Date(selectedFormulaire.date_validation).toLocaleDateString('fr-FR') : 'Non spécifiée'}</span>
+                    </div>
+                    {selectedFormulaire.notes_admin && (
+                      <div className="detail-item">
+                        <span className="label">Notes admin:</span>
+                        <span>{selectedFormulaire.notes_admin}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {selectedFormulaire.photos && selectedFormulaire.photos.length > 0 && (
+                  <div className="details-section">
+                    <h4>Photos</h4>
+                    <div className="photos-grid">
+                      {selectedFormulaire.photos.map((photo, index) => (
+                        <div key={index} className="photo-item">
+                          <img 
+                            src={photo.url || photo} 
+                            alt={`Photo ${index + 1}`} 
+                            className="photo-thumbnail"
+                            onClick={() => window.open(photo.url || photo, '_blank')}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button
+                className="btn-primary"
+                onClick={() => {
+                  setShowDetailsModal(false);
+                  planifierCollecte(selectedFormulaire.id);
+                }}
+              >
+                📅 Planifier cette Collecte
+              </button>
+              <button
+                className="btn-secondary"
+                onClick={() => setShowDetailsModal(false)}
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

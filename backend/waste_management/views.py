@@ -1071,6 +1071,18 @@ Notes: {notes_technicien or 'Aucune note'}
     dechet.description = valorisation_info
     dechet.save()
     
+    # Vérifier si tous les déchets de cette collecte sont valorisés
+    collecte = dechet.collecte
+    dechets_non_valorises = collecte.dechets.filter(etat='TRI').count()
+    
+    # Si plus aucun déchet n'est en cours de tri, marquer le formulaire comme terminé
+    if dechets_non_valorises == 0:
+        formulaire = collecte.formulaire_origine
+        if formulaire:
+            formulaire.statut = 'TERMINE'
+            formulaire.save()
+            print(f"✅ Formulaire {formulaire.reference} marqué comme TERMINE")
+    
     return Response({
         'message': 'Valorisation finalisée avec succès',
         'dechet': {

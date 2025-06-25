@@ -31,7 +31,7 @@ const TechnicienDashboard = () => {
 
   // Filtres
   const [dechetFilter, setDechetFilter] = useState('tous');
-  const [processusFilter, setProcessusFilter] = useState('en_cours');
+  const [processusFilter, setProcessusFilter] = useState('tous');
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken');

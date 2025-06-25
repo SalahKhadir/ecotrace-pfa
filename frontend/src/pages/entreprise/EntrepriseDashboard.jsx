@@ -22,7 +22,7 @@ const EntrepriseDashboard = () => {
       const token = localStorage.getItem('accessToken');
       const role = localStorage.getItem('userRole');
       const userInfo = localStorage.getItem('userInfo');
-      
+
       if (!token || role !== 'ENTREPRISE') {
         navigate('/login');
         return;
@@ -40,7 +40,7 @@ const EntrepriseDashboard = () => {
           loadFormulaires(),
           loadStats()
         ]);
-        
+
       } catch (error) {
         console.error('Erreur lors du chargement:', error);
       } finally {
@@ -108,10 +108,10 @@ const EntrepriseDashboard = () => {
   if (loading) {
     return (
       <div className="entreprise-dashboard">
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
           minHeight: '100vh',
           flexDirection: 'column',
           gap: '1rem'
@@ -138,55 +138,55 @@ const EntrepriseDashboard = () => {
     <div className="entreprise-dashboard">
       {/* Header */}
       <header className="entreprise-header">        <div className="entreprise-header-content">
-          <div className="entreprise-header-left">
-            <Logo className="entreprise-logo" size="medium" showText={true} />
-            <div className="entreprise-user-badge">
-              <span className="entreprise-user-role">
-                🏢 Entreprise
-              </span>
-            </div>
-          </div>
-          
+        <div className="entreprise-header-left">
+          <Logo className="entreprise-logo" size="medium" showText={true} />
           <div className="entreprise-user-badge">
-            <NotificationCenter userRole="ENTREPRISE" showAsDropdown={true} />
-            <span className="entreprise-user-name">
-              Bonjour, {user.company_name || user.first_name || user.username}
+            <span className="entreprise-user-role">
+              🏢 Entreprise
             </span>
-            <button onClick={handleLogout} className="logout-btn">
-              Déconnexion
-            </button>
           </div>
         </div>
+
+        <div className="entreprise-user-badge">
+          <NotificationCenter userRole="ENTREPRISE" showAsDropdown={true} />
+          <span className="entreprise-user-name">
+            Bonjour, {user.company_name || user.first_name || user.username}
+          </span>
+          <button onClick={handleLogout} className="logout-btn">
+            Déconnexion
+          </button>
+        </div>
+      </div>
       </header>
 
       {/* Navigation */}
       <nav className="entreprise-nav">
         <div className="entreprise-nav-content">
-          <button 
+          <button
             className={`entreprise-nav-btn ${activeSection === 'overview' ? 'active' : ''}`}
             onClick={() => setActiveSection('overview')}
           >
             📊 Vue d'ensemble
           </button>
-          <button 
+          <button
             className={`entreprise-nav-btn ${activeSection === 'formulaire' ? 'active' : ''}`}
             onClick={() => setActiveSection('formulaire')}
           >
             📝 Nouveau formulaire
           </button>
-          <button 
+          <button
             className={`entreprise-nav-btn ${activeSection === 'collectes' ? 'active' : ''}`}
             onClick={() => setActiveSection('collectes')}
           >
             📋 Mes collectes
           </button>
-          <button 
+          <button
             className={`entreprise-nav-btn ${activeSection === 'formulaires' ? 'active' : ''}`}
             onClick={() => setActiveSection('formulaires')}
           >
             📄 Mes formulaires
           </button>
-          <button 
+          <button
             className={`entreprise-nav-btn ${activeSection === 'profil' ? 'active' : ''}`}
             onClick={() => setActiveSection('profil')}
           >
@@ -198,18 +198,18 @@ const EntrepriseDashboard = () => {
       {/* Contenu principal */}
       <main className="entreprise-main">
         {activeSection === 'overview' && (
-          <OverviewSection 
-            user={user} 
-            collectes={collectes} 
+          <OverviewSection
+            user={user}
+            collectes={collectes}
             formulaires={formulaires}
             stats={stats}
-            setActiveSection={setActiveSection} 
+            setActiveSection={setActiveSection}
           />
         )}
 
         {activeSection === 'planifier' && (
-          <PlanifierCollecteSection 
-            user={user} 
+          <PlanifierCollecteSection
+            user={user}
             selectedFormulaire={selectedFormulaire}
             onSuccess={() => {
               setActiveSection('collectes');
@@ -224,12 +224,12 @@ const EntrepriseDashboard = () => {
         )}
 
         {activeSection === 'formulaire' && (
-          <FormulaireSection 
-            user={user} 
+          <FormulaireSection
+            user={user}
             onSuccess={() => {
               setActiveSection('formulaires');
               refreshData();
-            }} 
+            }}
           />
         )}
 
@@ -238,9 +238,9 @@ const EntrepriseDashboard = () => {
         )}
 
         {activeSection === 'formulaires' && (
-          <FormulairesSection 
-            formulaires={formulaires} 
-            onRefresh={refreshData} 
+          <FormulairesSection
+            formulaires={formulaires}
+            onRefresh={refreshData}
             setActiveSection={setActiveSection}
             onPlanifierCollecte={(formulaire) => {
               setSelectedFormulaire(formulaire);
@@ -264,38 +264,38 @@ const OverviewSection = ({ user, collectes, formulaires, stats, setActiveSection
       <h2>Tableau de bord entreprise</h2>
       <p>Gérez efficacement vos demandes de collecte et suivez vos déchets numériques</p>
     </div>
-    
+
     {/* Statistiques */}
     <div className="entreprise-stats-grid">
       <div className="entreprise-stat-card primary">
         <div className="entreprise-stat-icon">📝</div>
         <div className="entreprise-stat-content">
           <h3>{stats.formulaires_total || 0}</h3>
-          <p>Formulaires soumis<br/>{stats.formulaires_en_attente || 0} en attente</p>
+          <p>Formulaires soumis<br />{stats.formulaires_en_attente || 0} en attente</p>
         </div>
       </div>
-      
+
       <div className="entreprise-stat-card info">
         <div className="entreprise-stat-icon">📋</div>
         <div className="entreprise-stat-content">
           <h3>{stats.collectes_total || 0}</h3>
-          <p>Collectes planifiées<br/>{stats.collectes_en_cours || 0} en cours</p>
+          <p>Collectes planifiées<br />{stats.collectes_en_cours || 0} en cours</p>
         </div>
       </div>
-      
+
       <div className="entreprise-stat-card success">
         <div className="entreprise-stat-icon">✅</div>
         <div className="entreprise-stat-content">
           <h3>{stats.collectes_terminees || 0}</h3>
-          <p>Collectes terminées<br/>Cette année</p>
+          <p>Collectes terminées<br />Cette année</p>
         </div>
       </div>
-      
+
       <div className="entreprise-stat-card warning">
         <div className="entreprise-stat-icon">⏱️</div>
         <div className="entreprise-stat-content">
           <h3>{stats.formulaires_en_attente || 0}</h3>
-          <p>Demandes en cours<br/>À traiter</p>
+          <p>Demandes en cours<br />À traiter</p>
         </div>
       </div>
     </div>
@@ -304,16 +304,8 @@ const OverviewSection = ({ user, collectes, formulaires, stats, setActiveSection
     <div className="entreprise-actions">
       <h3>Actions rapides</h3>
       <div className="entreprise-actions-grid">
-        <div 
-          className="entreprise-action-card nouvelle-demande"
-          onClick={() => setActiveSection('planifier')}
-        >
-          <div className="entreprise-action-icon">📅</div>
-          <h4>Planifier une collecte</h4>
-          <p>Organiser directement une collecte de vos déchets</p>
-        </div>
-        
-        <div 
+
+        <div
           className="entreprise-action-card planning"
           onClick={() => setActiveSection('formulaire')}
         >
@@ -321,8 +313,8 @@ const OverviewSection = ({ user, collectes, formulaires, stats, setActiveSection
           <h4>Demander une collecte</h4>
           <p>Remplir un formulaire de demande de collecte</p>
         </div>
-        
-        <div 
+
+        <div
           className="entreprise-action-card planning"
           onClick={() => setActiveSection('collectes')}
         >
@@ -330,8 +322,8 @@ const OverviewSection = ({ user, collectes, formulaires, stats, setActiveSection
           <h4>Suivre mes collectes</h4>
           <p>Consulter l'état d'avancement de vos collectes</p>
         </div>
-        
-        <div 
+
+        <div
           className="entreprise-action-card suivi"
           onClick={() => alert('Fonctionnalité en cours de développement')}
         >
@@ -364,7 +356,7 @@ const OverviewSection = ({ user, collectes, formulaires, stats, setActiveSection
       ) : (
         <div className="entreprise-empty-state">
           <p>Aucune activité récente. Commencez par remplir un formulaire de collecte.</p>
-          <button 
+          <button
             className="entreprise-empty-state-button"
             onClick={() => setActiveSection('formulaire')}
           >
@@ -377,440 +369,7 @@ const OverviewSection = ({ user, collectes, formulaires, stats, setActiveSection
 );
 
 // Section Planifier Collecte (pour entreprises et responsables logistique)
-const PlanifierCollecteSection = ({ user, selectedFormulaire, onSuccess, onCancel }) => {
-  const [formData, setFormData] = useState({
-    date_collecte: '',
-    heure_collecte: '', // NOUVEAU: Heure précise dans le créneau
-    date_prevue: '',
-    mode_collecte: 'domicile',
-    adresse: user?.address || '',
-    telephone: user?.phone || '',
-    point_collecte: '',
-    formulaire_origine: '', // ID du formulaire d'origine (optionnel)
-    notes: ''
-  });
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
-  const [formulairesDisponibles, setFormulairesDisponibles] = useState([]);
-  const [pointsCollecte, setPointsCollecte] = useState([]);
-  const [creneauDisponible, setCreneauDisponible] = useState(null);
 
-  useEffect(() => {
-    // Si un formulaire est sélectionné, pré-remplir les données
-    if (selectedFormulaire) {
-      setFormData(prev => ({
-        ...prev,
-        date_collecte: selectedFormulaire.date_souhaitee || '',
-        mode_collecte: selectedFormulaire.mode_collecte || 'domicile',
-        adresse: selectedFormulaire.adresse_collecte || user?.address || '',
-        telephone: selectedFormulaire.telephone || user?.phone || '',
-        formulaire_origine: selectedFormulaire.id || '',
-        notes: `Collecte basée sur le formulaire ${selectedFormulaire.reference} - ${selectedFormulaire.description}`
-      }));
-      
-      // Définir le créneau disponible basé sur le formulaire
-      setCreneauDisponible(selectedFormulaire.creneau_horaire);
-    }
-    
-    // Charger les formulaires disponibles pour cette entreprise (si pas de sélection)
-    if (!selectedFormulaire) {
-      loadFormulairesDisponibles();
-    }
-    
-    // Charger les points de collecte si mode apport
-    if (formData.mode_collecte === 'apport') {
-      loadPointsCollecte();
-    }
-  }, [selectedFormulaire, formData.mode_collecte, user]);
-
-  const loadFormulairesDisponibles = async () => {
-    try {
-      const formulaires = await wasteService.getMesFormulaires();
-      // Filtrer les formulaires validés qui n'ont pas encore de collecte associée
-      const formulairesValides = formulaires.filter(f => 
-        f.statut === 'VALIDE' && !f.collecte_info
-      );
-      setFormulairesDisponibles(formulairesValides);
-    } catch (error) {
-      console.error('Erreur lors du chargement des formulaires:', error);
-    }
-  };
-
-  const loadPointsCollecte = async () => {
-    try {
-      const points = await wasteService.getPointsCollecte();
-      setPointsCollecte(points);
-    } catch (error) {
-      console.error('Erreur lors du chargement des points de collecte:', error);
-    }
-  };
-
-  // Obtenir les heures disponibles selon le créneau
-  const getHeuresDisponibles = (creneau) => {
-    const heures = [];
-    let debut, fin;
-    
-    switch (creneau) {
-      case 'matin':
-        debut = 8;
-        fin = 12;
-        break;
-      case 'apres_midi':
-        debut = 14;
-        fin = 18;
-        break;
-      case 'flexible':
-        debut = 8;
-        fin = 18;
-        break;
-      default:
-        debut = 9;
-        fin = 17;
-    }
-    
-    for (let h = debut; h < fin; h++) {
-      heures.push(`${h.toString().padStart(2, '0')}:00`);
-      heures.push(`${h.toString().padStart(2, '0')}:30`);
-    }
-    
-    return heures;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setError('');
-
-    try {
-      if (!formData.date_collecte) {
-        throw new Error('La date de collecte est obligatoire');
-      }
-
-      if (!formData.heure_collecte) {
-        throw new Error('L\'heure de collecte est obligatoire');
-      }
-
-      if (formData.mode_collecte === 'domicile' && !formData.adresse) {
-        throw new Error('L\'adresse est obligatoire pour une collecte à domicile');
-      }
-
-      if (formData.mode_collecte === 'apport' && !formData.point_collecte) {
-        throw new Error('Le point de collecte est obligatoire pour un apport volontaire');
-      }
-
-      if (!formData.telephone) {
-        throw new Error('Le numéro de téléphone est obligatoire');
-      }
-
-      // Préparer les données pour l'envoi
-      const dataToSend = {
-        date_collecte: formData.date_collecte,
-        date_prevue: formData.date_prevue || formData.date_collecte,
-        mode_collecte: formData.mode_collecte,
-        adresse: formData.mode_collecte === 'domicile' ? 
-          `${formData.adresse}\n\nHeure prévue: ${formData.heure_collecte}` : null,
-        telephone: formData.telephone,
-        point_collecte: formData.mode_collecte === 'apport' ? 
-          `${formData.point_collecte} - Heure: ${formData.heure_collecte}` : null,
-        formulaire_origine: formData.formulaire_origine || null
-      };
-
-      await wasteService.createCollecte(dataToSend);
-      setSuccess(true);
-      
-      setTimeout(() => {
-        onSuccess();
-      }, 2000);
-      
-    } catch (error) {
-      console.error('Erreur lors de la planification:', error);
-      setError(error.message || 'Erreur lors de la planification de la collecte');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  if (success) {
-    return (
-      <div className="entreprise-success-state">
-        <div className="entreprise-success-icon">📅</div>
-        <h3>Collecte planifiée avec succès !</h3>
-        <p>
-          {selectedFormulaire 
-            ? `Collecte planifiée pour le formulaire ${selectedFormulaire.reference}` 
-            : 'Votre collecte a été programmée'
-          }. Le responsable logistique pourra assigner un transporteur et confirmer les détails.
-        </p>
-        <div className="entreprise-form-info" style={{ marginTop: '1.5rem' }}>
-          <span>ℹ️</span>
-          <span>Vous pouvez suivre l'avancement dans la section "Mes collectes".</span>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="entreprise-formulaire">
-      <div className="entreprise-form-header">
-        <h2>
-          {selectedFormulaire 
-            ? `Planifier collecte - ${selectedFormulaire.reference}` 
-            : 'Planifier une collecte'
-          }
-        </h2>
-        <p>
-          {selectedFormulaire 
-            ? `Organisez la collecte pour le formulaire validé ${selectedFormulaire.reference}`
-            : 'Organisez directement une collecte de vos déchets numériques'
-          }
-        </p>
-      </div>
-      
-      <form onSubmit={handleSubmit} className="entreprise-form">
-        {error && (
-          <div className="entreprise-error-alert">
-            <span className="entreprise-error-icon">⚠️</span>
-            <p>{error}</p>
-          </div>
-        )}
-
-        {/* Informations du formulaire d'origine */}
-        {selectedFormulaire && (
-          <div className="entreprise-form-section">
-            <h3>📋 Formulaire d'origine</h3>
-            <div className="entreprise-form-info">
-              <span>🔗</span>
-              <span>
-                <strong>{selectedFormulaire.reference}</strong> - {selectedFormulaire.type_dechets} 
-                ({new Date(selectedFormulaire.date_creation).toLocaleDateString('fr-FR')})
-              </span>
-            </div>
-            <p style={{ color: '#6b7280', margin: '0.5rem 0 0 0' }}>
-              {selectedFormulaire.description}
-            </p>
-          </div>
-        )}
-
-        {/* Lien avec formulaire existant (si pas de sélection) */}
-        {!selectedFormulaire && formulairesDisponibles.length > 0 && (
-          <div className="entreprise-form-section">
-            <h3>🔗 Formulaire d'origine (optionnel)</h3>
-            <div className="entreprise-form-group">
-              <label>Associer à un formulaire existant</label>
-              <select
-                name="formulaire_origine"
-                value={formData.formulaire_origine}
-                onChange={handleChange}
-              >
-                <option value="">Nouvelle collecte indépendante</option>
-                {formulairesDisponibles.map(formulaire => (
-                  <option key={formulaire.id} value={formulaire.id}>
-                    {formulaire.reference} - {formulaire.type_dechets} ({new Date(formulaire.date_creation).toLocaleDateString('fr-FR')})
-                  </option>
-                ))}
-              </select>
-              <small>Associez cette collecte à un formulaire validé existant</small>
-            </div>
-          </div>
-        )}
-
-        {/* Dates et horaires de planification */}
-        <div className="entreprise-form-section">
-          <h3>📅 Planification</h3>
-          
-          <div className="entreprise-form-grid-2">
-            <div className="entreprise-form-group">
-              <label>Date de collecte *</label>
-              <input
-                type="date"
-                name="date_collecte"
-                value={formData.date_collecte}
-                onChange={handleChange}
-                required
-                min={new Date().toISOString().split('T')[0]}
-              />
-              <small>Date à laquelle la collecte doit avoir lieu</small>
-            </div>
-
-            <div className="entreprise-form-group">
-              <label>Heure de collecte *</label>
-              {creneauDisponible ? (
-                <select
-                  name="heure_collecte"
-                  value={formData.heure_collecte}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="">Sélectionnez l'heure</option>
-                  {getHeuresDisponibles(creneauDisponible).map(heure => (
-                    <option key={heure} value={heure}>
-                      {heure}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <input
-                  type="time"
-                  name="heure_collecte"
-                  value={formData.heure_collecte}
-                  onChange={handleChange}
-                  required
-                />
-              )}
-              <small>
-                {creneauDisponible 
-                  ? `Heure dans le créneau ${getCreneauLabel(creneauDisponible)}`
-                  : 'Heure précise de collecte'
-                }
-              </small>
-            </div>
-          </div>
-
-          <div className="entreprise-form-group">
-            <label>Date de collecte prévue</label>
-            <input
-              type="date"
-              name="date_prevue"
-              value={formData.date_prevue}
-              onChange={handleChange}
-              min={formData.date_collecte || new Date().toISOString().split('T')[0]}
-            />
-            <small>Si différente de la date souhaitée (optionnel)</small>
-          </div>
-        </div>
-
-        {/* Mode de collecte */}
-        <div className="entreprise-form-section">
-          <h3>🚛 Mode de collecte</h3>
-          
-          <div className="entreprise-form-group">
-            <label>Type de collecte *</label>
-            <select
-              name="mode_collecte"
-              value={formData.mode_collecte}
-              onChange={handleChange}
-              required
-              disabled={selectedFormulaire} // Désactivé si basé sur un formulaire
-            >
-              <option value="domicile">Collecte sur site (à domicile/entreprise)</option>
-              <option value="apport">Apport volontaire (point de collecte)</option>
-            </select>
-            {selectedFormulaire && (
-              <small>Mode basé sur le formulaire d'origine</small>
-            )}
-          </div>
-
-          {formData.mode_collecte === 'domicile' ? (
-            <div className="entreprise-form-group">
-              <label>Adresse de collecte *</label>
-              <textarea
-                name="adresse"
-                value={formData.adresse}
-                onChange={handleChange}
-                required={formData.mode_collecte === 'domicile'}
-                rows={3}
-                placeholder="Adresse complète où effectuer la collecte..."
-              />
-              <small>Adresse précise avec instructions d'accès si nécessaire</small>
-            </div>
-          ) : (
-            <div className="entreprise-form-group">
-              <label>Point de collecte *</label>
-              <select
-                name="point_collecte"
-                value={formData.point_collecte}
-                onChange={handleChange}
-                required={formData.mode_collecte === 'apport'}
-              >
-                <option value="">Sélectionnez un point de collecte</option>
-                {pointsCollecte.map((point, index) => (
-                  <option key={index} value={point.nom}>
-                    {point.nom} - {point.adresse}
-                  </option>
-                ))}
-              </select>
-              <small>Point de dépôt où vous apporterez vos déchets</small>
-            </div>
-          )}
-        </div>
-
-        {/* Contact */}
-        <div className="entreprise-form-section">
-          <h3>📞 Contact</h3>
-          
-          <div className="entreprise-form-group">
-            <label>Téléphone de contact *</label>
-            <input
-              type="tel"
-              name="telephone"
-              value={formData.telephone}
-              onChange={handleChange}
-              required
-              placeholder="Numéro de téléphone"
-            />
-            <small>Numéro joignable le jour de la collecte</small>
-          </div>
-
-          <div className="entreprise-form-group">
-            <label>Notes complémentaires</label>
-            <textarea
-              name="notes"
-              value={formData.notes}
-              onChange={handleChange}
-              rows={3}
-              placeholder="Instructions particulières, contraintes d'accès, créneaux préférés..."
-            />
-            <small>Toute information utile pour l'organisation de la collecte</small>
-          </div>
-        </div>
-
-        <div className="entreprise-form-info">
-          <span>📋</span>
-          <span>
-            <strong>Processus :</strong> Une fois planifiée, votre collecte sera visible par le responsable logistique 
-            qui pourra assigner un transporteur et finaliser l'organisation.
-          </span>
-        </div>
-
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <button
-            type="submit"
-            disabled={submitting}
-            className="entreprise-submit-btn"
-            style={{ flex: 1 }}
-          >
-            {submitting ? '📅 Planification en cours...' : '📅 Planifier la collecte'}
-          </button>
-          
-          {selectedFormulaire && onCancel && (
-            <button
-              type="button"
-              onClick={onCancel}
-              className="entreprise-submit-btn"
-              style={{ 
-                flex: 'none',
-                background: '#6b7280',
-                minWidth: 'auto',
-                padding: '1rem 2rem'
-              }}
-            >
-              Annuler
-            </button>
-          )}
-        </div>
-      </form>
-    </div>
-  );
-};
 
 // Section Formulaire Entreprise (spécifique aux entreprises)
 const FormulaireSection = ({ user, onSuccess }) => {
@@ -853,11 +412,11 @@ const FormulaireSection = ({ user, onSuccess }) => {
       // Envoyer les données (même structure que particulier)
       await wasteService.createFormulaireCollecte(formData);
       setSuccess(true);
-      
+
       setTimeout(() => {
         onSuccess();
       }, 2000);
-      
+
     } catch (error) {
       console.error('Erreur lors de la soumission:', error);
       setError(error.message || 'Erreur lors de l\'envoi du formulaire');
@@ -894,7 +453,7 @@ const FormulaireSection = ({ user, onSuccess }) => {
         <h2>Demande de collecte entreprise</h2>
         <p>Planifiez une collecte de vos déchets numériques sur votre site d'entreprise</p>
       </div>
-      
+
       <form onSubmit={handleSubmit} className="entreprise-form">
         {error && (
           <div className="entreprise-error-alert">
@@ -905,7 +464,7 @@ const FormulaireSection = ({ user, onSuccess }) => {
 
         <div className="entreprise-form-section">
           <h3>📋 Informations sur les déchets</h3>
-          
+
           <div className="entreprise-form-grid-2">
             <div className="entreprise-form-group">
               <label>Type de déchets *</label>
@@ -959,12 +518,12 @@ const FormulaireSection = ({ user, onSuccess }) => {
 
         <div className="entreprise-form-section">
           <h3>📅 Planification de la collecte</h3>
-          
+
           <div className="entreprise-form-info">
             <span>🏢</span>
             <span>Mode de collecte : <strong>Collecte sur site d'entreprise</strong></span>
           </div>
-          
+
           <div className="entreprise-form-grid-2">
             <div className="entreprise-form-group">
               <label>Date souhaitée *</label>
@@ -1012,7 +571,7 @@ const FormulaireSection = ({ user, onSuccess }) => {
 
         <div className="entreprise-form-section">
           <h3>👥 Contact et informations</h3>
-          
+
           <div className="entreprise-form-grid-2">
             <div className="entreprise-form-group">
               <label>Nom de l'entreprise</label>
@@ -1067,7 +626,7 @@ const FormulaireSection = ({ user, onSuccess }) => {
         <div className="entreprise-form-info">
           <span>📋</span>
           <span>
-            <strong>Processus :</strong> Votre demande sera examinée par notre responsable logistique. 
+            <strong>Processus :</strong> Votre demande sera examinée par notre responsable logistique.
             Vous recevrez une confirmation avec les détails finaux de la collecte dans votre tableau de bord.
           </span>
         </div>
@@ -1091,7 +650,7 @@ const CollectesSection = ({ collectes, setActiveSection }) => (
       <h2>Mes collectes</h2>
       <p>Suivez l'état d'avancement de vos collectes de déchets numériques</p>
     </div>
-    
+
     {collectes.length > 0 ? (
       <div className="entreprise-activity-list">
         {collectes.map((collecte, index) => (
@@ -1116,7 +675,7 @@ const CollectesSection = ({ collectes, setActiveSection }) => (
     ) : (
       <div className="entreprise-empty-state">
         <p>Aucune collecte planifiée pour le moment</p>
-        <button 
+        <button
           className="entreprise-empty-state-button"
           onClick={() => setActiveSection('formulaire')}
         >
@@ -1134,7 +693,7 @@ const FormulairesSection = ({ formulaires, onRefresh, setActiveSection, onPlanif
       <h2>Mes formulaires</h2>
       <p>Consultez l'historique de vos demandes de collecte</p>
     </div>
-    
+
     {formulaires.length > 0 ? (
       <div className="entreprise-activity-list">
         {formulaires.map((formulaire, index) => (
@@ -1146,24 +705,24 @@ const FormulairesSection = ({ formulaires, onRefresh, setActiveSection, onPlanif
               </p>
               <p style={{ color: '#374151', marginTop: '0.5rem' }}>{formulaire.description}</p>
               <p className="entreprise-activity-date">
-                Date souhaitée: {new Date(formulaire.date_souhaitee).toLocaleDateString('fr-FR')} | 
+                Date souhaitée: {new Date(formulaire.date_souhaitee).toLocaleDateString('fr-FR')} |
                 Mode: {formulaire.mode_collecte === 'domicile' ? 'Collecte sur site' : 'Apport volontaire'}
                 {formulaire.creneau_horaire && ` | Créneau: ${getCreneauLabel(formulaire.creneau_horaire)}`}
               </p>
             </div>
-            
+
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
               <span className={`entreprise-activity-status status-${formulaire.statut.toLowerCase()}`}>
                 {getStatutLabel(formulaire.statut)}
               </span>
-              
+
               {/* Bouton Planifier collecte pour formulaires validés sans collecte */}
               {(formulaire.statut === 'VALIDE' && !formulaire.collecte_info) && (
-                <button 
+                <button
                   onClick={() => onPlanifierCollecte(formulaire)}
                   className="entreprise-submit-btn"
-                  style={{ 
-                    minWidth: 'auto', 
+                  style={{
+                    minWidth: 'auto',
                     padding: '0.5rem 1rem',
                     fontSize: '0.875rem',
                     background: 'linear-gradient(135deg, #059669, #047857)'
@@ -1172,14 +731,14 @@ const FormulairesSection = ({ formulaires, onRefresh, setActiveSection, onPlanif
                   📅 Planifier collecte
                 </button>
               )}
-              
+
               {/* Afficher info collecte si associée */}
               {formulaire.collecte_info && (
-                <div style={{ 
-                  fontSize: '0.75rem', 
-                  color: '#059669', 
-                  background: '#f0fdf4', 
-                  padding: '0.25rem 0.5rem', 
+                <div style={{
+                  fontSize: '0.75rem',
+                  color: '#059669',
+                  background: '#f0fdf4',
+                  padding: '0.25rem 0.5rem',
                   borderRadius: '0.25rem',
                   border: '1px solid #bbf7d0'
                 }}>
@@ -1193,7 +752,7 @@ const FormulairesSection = ({ formulaires, onRefresh, setActiveSection, onPlanif
     ) : (
       <div className="entreprise-empty-state">
         <p>Aucun formulaire soumis</p>
-        <button 
+        <button
           className="entreprise-empty-state-button"
           onClick={() => setActiveSection('formulaire')}
         >
@@ -1224,12 +783,12 @@ const ProfilEntrepriseSection = ({ user, setUser }) => {
       const updatedUser = await userService.updateProfile(formData);
       setUser(updatedUser);
       setEditing(false);
-      
+
       // Mettre à jour localStorage
       const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
       const updatedUserInfo = { ...userInfo, ...updatedUser };
       localStorage.setItem('userInfo', JSON.stringify(updatedUserInfo));
-      
+
     } catch (error) {
       console.error('Erreur lors de la mise à jour:', error);
       alert('Erreur lors de la mise à jour du profil');
@@ -1244,12 +803,12 @@ const ProfilEntrepriseSection = ({ user, setUser }) => {
         <h2>Profil entreprise</h2>
         <p>Gérez les informations de votre entreprise</p>
       </div>
-      
+
       <div className="entreprise-form">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
           <h3>Informations de l'entreprise</h3>
           {!editing ? (
-            <button 
+            <button
               onClick={() => setEditing(true)}
               className="entreprise-submit-btn"
               style={{ minWidth: 'auto', padding: '0.5rem 1rem' }}
@@ -1258,7 +817,7 @@ const ProfilEntrepriseSection = ({ user, setUser }) => {
             </button>
           ) : (
             <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button 
+              <button
                 onClick={handleSave}
                 disabled={updating}
                 className="entreprise-submit-btn"
@@ -1266,7 +825,7 @@ const ProfilEntrepriseSection = ({ user, setUser }) => {
               >
                 {updating ? 'Sauvegarde...' : 'Sauvegarder'}
               </button>
-              <button 
+              <button
                 onClick={() => {
                   setEditing(false);
                   setFormData({
@@ -1279,10 +838,10 @@ const ProfilEntrepriseSection = ({ user, setUser }) => {
                     company_siret: user?.company_siret || ''
                   });
                 }}
-                style={{ 
-                  background: '#6b7280', 
-                  minWidth: 'auto', 
-                  padding: '0.5rem 1rem' 
+                style={{
+                  background: '#6b7280',
+                  minWidth: 'auto',
+                  padding: '0.5rem 1rem'
                 }}
                 className="entreprise-submit-btn"
               >

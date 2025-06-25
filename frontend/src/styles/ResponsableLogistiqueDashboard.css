@@ -538,6 +538,11 @@
   overflow-y: auto;
 }
 
+.modal-content.large {
+  max-width: 900px;
+  width: 90vw;
+}
+
 .modal-header {
   padding: 1.5rem;
   border-bottom: 1px solid #e5e7eb;
@@ -740,4 +745,157 @@
     max-width: none;
     width: auto;
   }
+  
+  .details-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .card-actions {
+    flex-direction: column;
+  }
+  
+  .photos-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+  
+  .modal-content.large {
+    width: 95vw;
+    margin: 0.5rem;
+  }
+}
+
+/* Styles pour le modal de détails */
+.formulaire-details {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.details-section {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: #f8fafc;
+  border-radius: 0.5rem;
+  border-left: 4px solid var(--eco-green);
+}
+
+.details-section h4 {
+  margin: 0 0 1rem 0;
+  color: var(--eco-dark);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.detail-item .label {
+  font-weight: 600;
+  color: #6b7280;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.detail-item span:not(.label) {
+  color: var(--eco-dark);
+  font-weight: 500;
+}
+
+.address-text,
+.description-text,
+.instructions-text {
+  background: white;
+  padding: 1rem;
+  border-radius: 0.375rem;
+  border: 1px solid #e5e7eb;
+  color: var(--eco-dark);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.urgence-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.urgence-badge.faible {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.urgence-badge.normale {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.urgence-badge.haute {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.photos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.photo-item {
+  position: relative;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s;
+}
+
+.photo-item:hover {
+  transform: scale(1.05);
+}
+
+.photo-thumbnail {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.photo-thumbnail:hover {
+  opacity: 0.8;
+}
+
+/* Amélioration des actions de cartes */
+.card-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.card-actions .btn-secondary {
+  flex: 1;
+  background-color: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.card-actions .btn-secondary:hover {
+  background-color: #e5e7eb;
+  border-color: #9ca3af;
+}
+
+.card-actions .btn-primary {
+  flex: 1;
 }

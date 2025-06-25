@@ -13,6 +13,8 @@ const ParticulierDashboard = () => {
   const [collectes, setCollectes] = useState([]);
   const [formulaires, setFormulaires] = useState([]);
   const [stats, setStats] = useState({});
+  const [showCollecteDetailsModal, setShowCollecteDetailsModal] = useState(false);
+  const [selectedCollecte, setSelectedCollecte] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -102,6 +104,16 @@ const ParticulierDashboard = () => {
       loadFormulaires(),
       loadStats()
     ]);
+  };
+
+  const openCollecteDetails = (collecte) => {
+    setSelectedCollecte(collecte);
+    setShowCollecteDetailsModal(true);
+  };
+
+  const closeCollecteDetails = () => {
+    setSelectedCollecte(null);
+    setShowCollecteDetailsModal(false);
   };
 
   if (loading) {
@@ -205,7 +217,7 @@ const ParticulierDashboard = () => {
 
         {/* Mes collectes */}
         {activeSection === 'collectes' && (
-          <CollectesSection collectes={collectes} />
+          <CollectesSection collectes={collectes} onOpenDetails={openCollecteDetails} />
         )}
 
         {/* Mes formulaires */}
@@ -218,11 +230,174 @@ const ParticulierDashboard = () => {
           <ProfilSection user={user} setUser={setUser} />
         )}
       </main>
+
+      {/* Modal de détails de collecte */}
+      {showCollecteDetailsModal && selectedCollecte && (
+        <div className="modal-overlay">
+          <div className="modal-content large">
+            <div className="modal-header">
+              <h3>Détails de la Collecte - {selectedCollecte.reference}</h3>
+              <button
+                className="modal-close"
+                onClick={closeCollecteDetails}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <div className="collecte-details-modal">
+                <div className="details-section">
+                  <h4>Informations Générales</h4>
+                  <div className="details-grid">
+                    <div className="detail-item">
+                      <span className="label">Référence:</span>
+                      <span>{selectedCollecte.reference}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="label">Statut:</span>
+                      <span className="status-badge" style={{ backgroundColor: getStatusColor(selectedCollecte.statut) }}>
+                        {getStatutLabel(selectedCollecte.statut)}
+                      </span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="label">Date de collecte:</span>
+                      <span>{new Date(selectedCollecte.date_collecte).toLocaleDateString('fr-FR')}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="label">Mode de collecte:</span>
+                      <span>{selectedCollecte.mode_collecte === 'domicile' ? 'Collecte à domicile' : 'Apport volontaire'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {selectedCollecte.adresse && (
+                  <div className="details-section">
+                    <h4>Adresse de Collecte</h4>
+                    <p className="address-text">{selectedCollecte.adresse}</p>
+                  </div>
+                )}
+
+                {selectedCollecte.transporteur_info && (
+                  <div className="details-section">
+                    <h4>Informations Transporteur</h4>
+                    <div className="details-grid">
+                      <div className="detail-item">
+                        <span className="label">Nom:</span>
+                        <span>{selectedCollecte.transporteur_info.first_name} {selectedCollecte.transporteur_info.last_name}</span>
+                      </div>
+                      {selectedCollecte.transporteur_info.email && (
+                        <div className="detail-item">
+                          <span className="label">Email:</span>
+                          <span>{selectedCollecte.transporteur_info.email}</span>
+                        </div>
+                      )}
+                      {selectedCollecte.transporteur_info.phone && (
+                        <div className="detail-item">
+                          <span className="label">Téléphone:</span>
+                          <span>{selectedCollecte.transporteur_info.phone}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {selectedCollecte.formulaire_origine && (
+                  <div className="details-section">
+                    <h4>Détails du Formulaire d'Origine</h4>
+                    <div className="details-grid">
+                      {selectedCollecte.formulaire_origine.type_dechets && (
+                        <div className="detail-item">
+                          <span className="label">Type de déchets:</span>
+                          <span>{selectedCollecte.formulaire_origine.type_dechets}</span>
+                        </div>
+                      )}
+                      {selectedCollecte.formulaire_origine.quantite_estimee && (
+                        <div className="detail-item">
+                          <span className="label">Quantité estimée:</span>
+                          <span>{selectedCollecte.formulaire_origine.quantite_estimee} kg</span>
+                        </div>
+                      )}
+                      {selectedCollecte.formulaire_origine.description && (
+                        <div className="detail-item">
+                          <span className="label">Description:</span>
+                          <span>{selectedCollecte.formulaire_origine.description}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {selectedCollecte.instructions && (
+                  <div className="details-section">
+                    <h4>Instructions Spéciales</h4>
+                    <p className="instructions-text">{selectedCollecte.instructions}</p>
+                  </div>
+                )}
+
+                <div className="details-section">
+                  <h4>Historique</h4>
+                  <div className="details-grid">
+                    <div className="detail-item">
+                      <span className="label">Date de création:</span>
+                      <span>{selectedCollecte.date_creation ? new Date(selectedCollecte.date_creation).toLocaleDateString('fr-FR') : 'Non spécifiée'}</span>
+                    </div>
+                    {selectedCollecte.date_debut && (
+                      <div className="detail-item">
+                        <span className="label">Date de début:</span>
+                        <span>{new Date(selectedCollecte.date_debut).toLocaleDateString('fr-FR')}</span>
+                      </div>
+                    )}
+                    {selectedCollecte.date_fin && (
+                      <div className="detail-item">
+                        <span className="label">Date de fin:</span>
+                        <span>{new Date(selectedCollecte.date_fin).toLocaleDateString('fr-FR')}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {selectedCollecte.statut === 'TERMINEE' && selectedCollecte.poids_collecte && (
+                  <div className="details-section">
+                    <h4>Résultats de la Collecte</h4>
+                    <div className="details-grid">
+                      <div className="detail-item">
+                        <span className="label">Poids collecté:</span>
+                        <span>{selectedCollecte.poids_collecte} kg</span>
+                      </div>
+                      {selectedCollecte.notes_transporteur && (
+                        <div className="detail-item">
+                          <span className="label">Notes du transporteur:</span>
+                          <span>{selectedCollecte.notes_transporteur}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              {selectedCollecte.statut === 'EN_COURS' && selectedCollecte.transporteur_info?.phone && (
+                <button className="btn-primary">
+                  📞 Contacter le transporteur
+                </button>
+              )}
+              <button
+                className="btn-secondary"
+                onClick={closeCollecteDetails}
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-// Fonction utilitaire pour les labels de statut
+// Fonctions utilitaires pour les labels et couleurs de statut
 const getStatutLabel = (statut) => {
   const labels = {
     'SOUMIS': 'Soumis',
@@ -236,6 +411,16 @@ const getStatutLabel = (statut) => {
     'ANNULEE': 'Annulée'
   };
   return labels[statut] || statut;
+};
+
+const getStatusColor = (status) => {
+  const colors = {
+    'EN_COURS': '#f59e0b',
+    'TERMINEE': '#10b981',
+    'PLANIFIEE': '#3b82f6',
+    'ANNULEE': '#ef4444'
+  };
+  return colors[status] || '#6b7280';
 };
 
 // Section Vue d'ensemble
@@ -799,17 +984,7 @@ const FormulaireSection = ({ user, onSuccess }) => {
 };
 
 // Section Mes collectes
-const CollectesSection = ({ collectes }) => {
-  const getStatusColor = (status) => {
-    const colors = {
-      'EN_COURS': '#f59e0b',
-      'TERMINEE': '#10b981',
-      'PLANIFIEE': '#3b82f6',
-      'ANNULEE': '#ef4444'
-    };
-    return colors[status] || '#6b7280';
-  };
-
+const CollectesSection = ({ collectes, onOpenDetails }) => {
   return (
     <div className="collectes-section">
       <div className="section-header">
@@ -843,7 +1018,10 @@ const CollectesSection = ({ collectes }) => {
               </div>
 
               <div className="collecte-actions">
-                <button className="action-btn secondary">
+                <button 
+                  className="action-btn secondary"
+                  onClick={() => onOpenDetails(collecte)}
+                >
                   Voir détails
                 </button>
                 {collecte.statut === 'EN_COURS' && (

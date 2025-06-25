@@ -226,16 +226,23 @@ const AdministrateurDashboard = () => {
 
     const loadCollectesTerminees = async () => {
         try {
-            // Charger les collectes terminées pour les rapports
-            const response = await wasteService.getCollectes();
-            const allCollectes = response.results || response;
+            // Charger les formulaires terminés pour les rapports
+            const formulairesResponse = await wasteService.getFormulaires();
+            const allFormulaires = formulairesResponse.results || formulairesResponse;
             
-            // Filtrer seulement les collectes terminées
-            const collectesTerminees = allCollectes.filter(collecte => 
-                collecte.statut === 'TERMINEE' || collecte.statut === 'COMPLETED'
-            );
+            console.log('🔍 Debug formulaires:', allFormulaires);
+            console.log('🔍 Total formulaires récupérés:', allFormulaires.length);
             
-            setCollectesTerminees(collectesTerminees);
+            // Filtrer seulement les formulaires terminés
+            const formulairesTermines = allFormulaires.filter(formulaire => {
+                console.log('🔍 Formulaire:', formulaire.reference, 'Statut:', formulaire.statut);
+                return formulaire.statut === 'TERMINE';
+            });
+            
+            console.log('🔍 Formulaires terminés trouvés:', formulairesTermines.length);
+            
+            // Pour le rapport, nous utilisons les formulaires terminés comme "collectes terminées"
+            setCollectesTerminees(formulairesTermines);
         } catch (error) {
             console.error('Erreur collectes terminées:', error);
             setCollectesTerminees([]);
@@ -1228,32 +1235,31 @@ const AdministrateurDashboard = () => {
         </div>
     );
 
-    // Function to generate PDF report for a specific collection
-    const generateCollectionReport = async (collecte) => {
+    // Function to generate PDF report for a specific formulaire
+    const generateCollectionReport = async (formulaire) => {
         try {
             // Create a detailed report content
             const reportContent = `
-                RAPPORT DE COLLECTE ECOTRACE
-                ===========================
+                RAPPORT DE FORMULAIRE ECOTRACE
+                ==============================
                 
-                Référence: ${collecte.reference || collecte.id}
-                Date de collecte: ${new Date(collecte.date_collecte).toLocaleDateString('fr-FR')}
-                Statut: ${STATUS_LABELS[collecte.statut] || collecte.statut}
-                Adresse: ${collecte.adresse}
+                Référence: ${formulaire.reference || formulaire.id}
+                Date de création: ${new Date(formulaire.created_at || formulaire.date_souhaitee).toLocaleDateString('fr-FR')}
+                Statut: ${STATUS_LABELS[formulaire.statut] || formulaire.statut}
+                Adresse: ${formulaire.adresse_collecte || formulaire.adresse}
                 
-                DÉTAILS DE LA COLLECTE
-                ---------------------
-                Transporteur: ${collecte.transporteur || 'Non assigné'}
-                Date de création: ${new Date(collecte.created_at).toLocaleDateString('fr-FR')}
+                DÉTAILS DU FORMULAIRE
+                --------------------
+                Client: ${formulaire.utilisateur_nom || formulaire.utilisateur?.username || 'N/A'}
+                Type de déchets: ${formulaire.type_dechets}
+                Description: ${formulaire.description || 'Aucune description'}
+                Quantité estimée: ${formulaire.quantite_estimee || 'Non spécifiée'}
+                Mode de collecte: ${formulaire.mode_collecte || 'Non spécifié'}
                 
-                DÉCHETS COLLECTÉS
-                ----------------
-                Type: ${collecte.type_dechet || 'Non spécifié'}
-                Quantité: ${collecte.quantite || 'Non spécifiée'}
-                
-                NOTES
-                -----
-                ${collecte.notes || 'Aucune note'}
+                PLANIFICATION
+                ------------
+                Date souhaitée: ${new Date(formulaire.date_souhaitee).toLocaleDateString('fr-FR')}
+                Créneau: ${formulaire.creneau_horaire || 'Non spécifié'}
                 
                 ===========================
                 Rapport généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}
@@ -1265,7 +1271,7 @@ const AdministrateurDashboard = () => {
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `rapport_collecte_${collecte.reference || collecte.id}_${new Date().toISOString().split('T')[0]}.txt`;
+            link.download = `rapport_formulaire_${formulaire.reference || formulaire.id}_${new Date().toISOString().split('T')[0]}.txt`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -1322,7 +1328,7 @@ const AdministrateurDashboard = () => {
                         className="action-btn primary"
                         onClick={() => {
                             if (collectesTerminees.length === 0) {
-                                alert('Aucune collecte terminée disponible');
+                                alert('Aucun formulaire terminé disponible');
                                 return;
                             }
                             // Générer un rapport global
@@ -1330,16 +1336,18 @@ const AdministrateurDashboard = () => {
 RAPPORT GLOBAL ECOTRACE
 ======================
 
-Total des collectes terminées: ${collectesTerminees.length}
+Total des formulaires terminés: ${collectesTerminees.length}
 Période: ${new Date().toLocaleDateString('fr-FR')}
 
-DÉTAIL DES COLLECTES
--------------------
-${collectesTerminees.map((c, index) => 
-`${index + 1}. Collecte ${c.reference || c.id}
-   Date: ${new Date(c.date_collecte).toLocaleDateString('fr-FR')}
-   Adresse: ${c.adresse}
-   Transporteur: ${c.transporteur || 'Non assigné'}
+DÉTAIL DES FORMULAIRES
+---------------------
+${collectesTerminees.map((f, index) => 
+`${index + 1}. Formulaire ${f.reference || f.id}
+   Date de soumission: ${new Date(f.created_at || f.date_souhaitee).toLocaleDateString('fr-FR')}
+   Type de déchets: ${f.type_dechets}
+   Adresse: ${f.adresse_collecte || f.adresse}
+   Client: ${f.utilisateur_nom || f.utilisateur?.username || 'N/A'}
+   Statut: ${f.statut}
 `).join('\n')}
 
 ===========================
@@ -1363,11 +1371,11 @@ EcoTrace - Système de gestion des déchets
                     <button 
                         className="action-btn secondary"
                         onClick={() => {
-                            const thisMonth = collectesTerminees.filter(c => 
-                                new Date(c.date_collecte) >= new Date(Date.now() - 30*24*60*60*1000)
+                            const thisMonth = collectesTerminees.filter(f => 
+                                new Date(f.created_at || f.date_souhaitee) >= new Date(Date.now() - 30*24*60*60*1000)
                             );
                             if (thisMonth.length === 0) {
-                                alert('Aucune collecte ce mois');
+                                alert('Aucun formulaire terminé ce mois');
                                 return;
                             }
                             
@@ -1375,13 +1383,14 @@ EcoTrace - Système de gestion des déchets
 RAPPORT MENSUEL ECOTRACE
 =======================
 
-Collectes de ce mois: ${thisMonth.length}
+Formulaires terminés ce mois: ${thisMonth.length}
 Période: ${new Date().toLocaleDateString('fr-FR')}
 
-${thisMonth.map((c, index) => 
-`${index + 1}. Collecte ${c.reference || c.id}
-   Date: ${new Date(c.date_collecte).toLocaleDateString('fr-FR')}
-   Adresse: ${c.adresse}
+${thisMonth.map((f, index) => 
+`${index + 1}. Formulaire ${f.reference || f.id}
+   Date: ${new Date(f.created_at || f.date_souhaitee).toLocaleDateString('fr-FR')}
+   Type: ${f.type_dechets}
+   Adresse: ${f.adresse_collecte || f.adresse}
 `).join('\n')}
 
 ===========================
@@ -1411,40 +1420,40 @@ Rapport généré le ${new Date().toLocaleDateString('fr-FR')}
                 <div className="table-container">
                     <div className="table-header">
                         <div className="table-cell">Référence</div>
-                        <div className="table-cell">Date Collecte</div>
-                        <div className="table-cell">Transporteur</div>
+                        <div className="table-cell">Date Création</div>
+                        <div className="table-cell">Type de Déchets</div>
                         <div className="table-cell">Adresse</div>
                         <div className="table-cell">Statut</div>
                         <div className="table-cell">Actions</div>
                     </div>
                     
-                    {collectesTerminees.map(collecte => (
-                        <div key={collecte.id} className="table-row">
+                    {collectesTerminees.map(formulaire => (
+                        <div key={formulaire.id} className="table-row">
                             <div className="table-cell">
-                                <strong>{collecte.reference || collecte.id}</strong>
+                                <strong>{formulaire.reference || formulaire.id}</strong>
                             </div>
                             <div className="table-cell">
-                                {new Date(collecte.date_collecte).toLocaleDateString('fr-FR')}
+                                {new Date(formulaire.created_at || formulaire.date_souhaitee).toLocaleDateString('fr-FR')}
                             </div>
                             <div className="table-cell">
-                                {collecte.transporteur || 'Non assigné'}
+                                {formulaire.type_dechets}
                             </div>
                             <div className="table-cell">
-                                {collecte.adresse}
+                                {formulaire.adresse_collecte || formulaire.adresse}
                             </div>
                             <div className="table-cell">
                                 <span 
                                     className="status-pill"
                                     style={{ backgroundColor: '#10b981', color: 'white' }}
                                 >
-                                    {STATUS_LABELS[collecte.statut] || 'Terminée'}
+                                    {STATUS_LABELS[formulaire.statut] || 'Terminé'}
                                 </span>
                             </div>
                             <div className="table-cell">
                                 <div className="action-buttons">
                                     <button 
                                         className="btn-sm primary"
-                                        onClick={() => generateCollectionReport(collecte)}
+                                        onClick={() => generateCollectionReport(formulaire)}
                                     >
                                         📄 Générer Rapport
                                     </button>
@@ -1457,8 +1466,8 @@ Rapport généré le ${new Date().toLocaleDateString('fr-FR')}
                 {collectesTerminees.length === 0 && (
                     <div className="empty-state">
                         <div className="empty-icon">📊</div>
-                        <h3>Aucune collecte terminée</h3>
-                        <p>Aucune collecte terminée n'est disponible pour générer des rapports.</p>
+                        <h3>Aucun formulaire terminé</h3>
+                        <p>Aucun formulaire terminé n'est disponible pour générer des rapports.</p>
                     </div>
                 )}
             </div>
