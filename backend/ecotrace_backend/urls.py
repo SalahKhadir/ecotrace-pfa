@@ -13,6 +13,7 @@ def api_root(request):
             'auth': '/api/auth/',
             'users': '/api/users/',
             'waste': '/api/waste/',
+            'notifications': '/api/notifications/',
             'admin': '/admin/',
         }
     })
@@ -26,6 +27,7 @@ urlpatterns = [
     path('api/auth/', include(('users.urls', 'users'), namespace='auth')),  # Authentication endpoints
     path('api/users/', include(('users.urls', 'users'), namespace='users')),  # User management endpoints
     path('api/waste/', include('waste_management.urls')),
+    path('api/notifications/', include('notifications.urls')),
 ]
 
 # Servir les fichiers media en développement

@@ -396,4 +396,41 @@ export const wasteService = {
   }
 };
 
+// Service pour les notifications
+export const notificationService = {
+  // Récupérer les notifications de l'utilisateur
+  getUserNotifications: async (unreadOnly = false, limit = 20) => {
+    const params = new URLSearchParams();
+    if (unreadOnly) params.append('unread_only', 'true');
+    if (limit) params.append('limit', limit.toString());
+    
+    const response = await api.get(`/notifications/?${params.toString()}`);
+    return response.data;
+  },
+
+  // Marquer une notification comme lue
+  markAsRead: async (notificationId) => {
+    const response = await api.post(`/notifications/${notificationId}/read/`);
+    return response.data;
+  },
+
+  // Marquer toutes les notifications comme lues
+  markAllAsRead: async () => {
+    const response = await api.post('/notifications/mark-all-read/');
+    return response.data;
+  },
+
+  // Supprimer une notification
+  deleteNotification: async (notificationId) => {
+    const response = await api.delete(`/notifications/${notificationId}/delete/`);
+    return response.data;
+  },
+
+  // Récupérer les statistiques des notifications
+  getNotificationStats: async () => {
+    const response = await api.get('/notifications/stats/');
+    return response.data;
+  }
+};
+
 export default api;

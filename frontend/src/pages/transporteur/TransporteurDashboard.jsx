@@ -17,6 +17,7 @@ const TransporteurDashboard = () => {
   const [formulaires, setFormulaires] = useState([]);
   const [collectes, setCollectes] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [sidebarNotifications, setSidebarNotifications] = useState([]);
   
   // États pour la modal
   const [selectedFormulaire, setSelectedFormulaire] = useState(null);
@@ -45,7 +46,36 @@ const TransporteurDashboard = () => {
     }
     
     loadInitialData();
-  }, [navigate]);  const loadInitialData = async () => {
+  }, [navigate]);
+
+  // Effect to track notifications for sidebar badge
+  useEffect(() => {
+    const loadNotifications = async () => {
+      try {
+        await notificationService.initialize();
+        await notificationService.loadNotifications('TRANSPORTEUR');
+        const unsubscribe = notificationService.addListener(setSidebarNotifications);
+        
+        // Start polling for new notifications
+        notificationService.startPolling();
+        
+        return unsubscribe;
+      } catch (error) {
+        console.error('Error loading notifications:', error);
+      }
+    };
+    
+    const unsubscribePromise = loadNotifications();
+    
+    return () => {
+      unsubscribePromise.then(unsubscribe => {
+        if (unsubscribe) unsubscribe();
+      });
+      notificationService.stopPolling();
+    };
+  }, []);
+
+  const loadInitialData = async () => {
     try {
       setLoading(true);
       // Load user data first
@@ -881,37 +911,10 @@ const TransporteurDashboard = () => {
   const renderNotifications = () => (
     <div className="notifications-section">
       <div className="section-header">
-        <h2>Notifications</h2>
+        <h2>Centre de Notifications</h2>
         <p>Messages et alertes concernant vos collectes</p>
       </div>
-
-      <div className="notifications-list">
-        {notifications.map(notification => (
-          <div 
-            key={notification.id} 
-            className={`notification-item ${notification.unread ? 'unread' : ''}`}
-          >
-            <div className="notification-icon">
-              {notification.type === 'nouvelle_collecte' && '📦'}
-              {notification.type === 'collecte_urgent' && '🚨'}
-              {notification.type === 'rappel' && '⏰'}
-            </div>
-            <div className="notification-content">
-              <p className="notification-message">{notification.message}</p>
-              <span className="notification-time">Il y a {notification.time}</span>
-            </div>
-            {notification.unread && <div className="unread-badge"></div>}
-          </div>
-        ))}
-      </div>
-
-      {notifications.length === 0 && (
-        <div className="empty-state">
-          <div className="empty-icon">🔔</div>
-          <h3>Aucune notification</h3>
-          <p>Vous n'avez pas de notifications pour le moment.</p>
-        </div>
-      )}
+      <NotificationCenter userRole="TRANSPORTEUR" showAsDropdown={false} />
     </div>
   );
 
@@ -984,9 +987,9 @@ const TransporteurDashboard = () => {
           >
             <span className="menu-icon">🔔</span>
             Notifications
-            {notifications.filter(n => n.unread).length > 0 && (
+            {sidebarNotifications.filter(n => !(n.read || n.is_read)).length > 0 && (
               <span className="notification-badge">
-                {notifications.filter(n => n.unread).length}
+                {sidebarNotifications.filter(n => !(n.read || n.is_read)).length}
               </span>
             )}
           </button>

@@ -47,8 +47,29 @@ const ResponsableLogistiqueDashboard = () => {
 
   // Effect to track notifications for sidebar badge
   useEffect(() => {
-    const unsubscribe = notificationService.addListener(setSidebarNotifications);
-    return unsubscribe;
+    const loadNotifications = async () => {
+      try {
+        await notificationService.initialize();
+        await notificationService.loadNotifications('RESPONSABLE_LOGISTIQUE');
+        const unsubscribe = notificationService.addListener(setSidebarNotifications);
+        
+        // Start polling for new notifications
+        notificationService.startPolling();
+        
+        return unsubscribe;
+      } catch (error) {
+        console.error('Error loading notifications:', error);
+      }
+    };
+    
+    const unsubscribePromise = loadNotifications();
+    
+    return () => {
+      unsubscribePromise.then(unsubscribe => {
+        if (unsubscribe) unsubscribe();
+      });
+      notificationService.stopPolling();
+    };
   }, []);
 
   const loadInitialData = async () => {

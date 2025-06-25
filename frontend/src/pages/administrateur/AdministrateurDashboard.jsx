@@ -70,8 +70,29 @@ const AdministrateurDashboard = () => {
 
     // Effect to track notifications for sidebar badge
     useEffect(() => {
-        const unsubscribe = notificationService.addListener(setSidebarNotifications);
-        return unsubscribe;
+        const loadNotifications = async () => {
+            try {
+                await notificationService.initialize();
+                await notificationService.loadNotifications('ADMINISTRATEUR');
+                const unsubscribe = notificationService.addListener(setSidebarNotifications);
+                
+                // Start polling for new notifications
+                notificationService.startPolling();
+                
+                return unsubscribe;
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+            }
+        };
+        
+        const unsubscribePromise = loadNotifications();
+        
+        return () => {
+            unsubscribePromise.then(unsubscribe => {
+                if (unsubscribe) unsubscribe();
+            });
+            notificationService.stopPolling();
+        };
     }, []);
 
     const loadInitialData = async () => {
@@ -1875,9 +1896,9 @@ return (
                 >
                     <span className="menu-icon">🔔</span>
                     Notifications
-                    {sidebarNotifications.filter(n => !n.read).length > 0 && (
+                    {sidebarNotifications.filter(n => !(n.read || n.is_read)).length > 0 && (
                         <span className="notification-badge">
-                            {sidebarNotifications.filter(n => !n.read).length}
+                            {sidebarNotifications.filter(n => !(n.read || n.is_read)).length}
                         </span>
                     )}
                 </button>

@@ -14,6 +14,7 @@ const EntrepriseDashboard = () => {
   const [collectes, setCollectes] = useState([]);
   const [formulaires, setFormulaires] = useState([]);
   const [stats, setStats] = useState({});
+  const [sidebarNotifications, setSidebarNotifications] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -50,6 +51,33 @@ const EntrepriseDashboard = () => {
 
     initializeDashboard();
   }, [navigate]);
+
+  // Effect to track notifications for sidebar badge
+  useEffect(() => {
+    const loadNotifications = async () => {
+      try {
+        await notificationService.initialize();
+        await notificationService.loadNotifications('ENTREPRISE');
+        const unsubscribe = notificationService.addListener(setSidebarNotifications);
+        
+        // Start polling for new notifications
+        notificationService.startPolling();
+        
+        return unsubscribe;
+      } catch (error) {
+        console.error('Error loading notifications:', error);
+      }
+    };
+    
+    const unsubscribePromise = loadNotifications();
+    
+    return () => {
+      unsubscribePromise.then(unsubscribe => {
+        if (unsubscribe) unsubscribe();
+      });
+      notificationService.stopPolling();
+    };
+  }, []);
 
   const loadCollectes = async () => {
     try {
@@ -187,6 +215,17 @@ const EntrepriseDashboard = () => {
             📄 Mes formulaires
           </button>
           <button
+            className={`entreprise-nav-btn ${activeSection === 'notifications' ? 'active' : ''}`}
+            onClick={() => setActiveSection('notifications')}
+          >
+            🔔 Notifications
+            {sidebarNotifications.filter(n => !(n.read || n.is_read)).length > 0 && (
+              <span className="notification-badge">
+                {sidebarNotifications.filter(n => !(n.read || n.is_read)).length}
+              </span>
+            )}
+          </button>
+          <button
             className={`entreprise-nav-btn ${activeSection === 'profil' ? 'active' : ''}`}
             onClick={() => setActiveSection('profil')}
           >
@@ -247,6 +286,16 @@ const EntrepriseDashboard = () => {
               setActiveSection('planifier');
             }}
           />
+        )}
+
+        {activeSection === 'notifications' && (
+          <div className="notifications-section">
+            <div className="section-header">
+              <h2>Centre de Notifications</h2>
+              <p>Toutes vos notifications en temps réel</p>
+            </div>
+            <NotificationCenter userRole="ENTREPRISE" showAsDropdown={false} />
+          </div>
         )}
 
         {activeSection === 'profil' && (

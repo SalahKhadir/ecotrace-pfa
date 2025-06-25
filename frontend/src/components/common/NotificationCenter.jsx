@@ -45,8 +45,8 @@ const NotificationCenter = ({ userRole, showAsDropdown = false }) => {
 
   const getFilteredNotifications = () => {
     switch (filter) {
-      case 'unread': return notifications.filter(n => !n.read);
-      case 'read': return notifications.filter(n => n.read);
+      case 'unread': return notifications.filter(n => !(n.read || n.is_read));
+      case 'read': return notifications.filter(n => n.read || n.is_read);
       default: return notifications;
     }
   };
@@ -67,16 +67,16 @@ const NotificationCenter = ({ userRole, showAsDropdown = false }) => {
   };
 
   const handleNotificationClick = (notification) => {
-    if (!notification.read) {
+    if (!(notification.read || notification.is_read)) {
       markAsRead(notification.id);
     }
     
-    if (notification.actionUrl) {
-      window.location.href = notification.actionUrl;
+    if (notification.actionUrl || notification.action_url) {
+      window.location.href = notification.actionUrl || notification.action_url;
     }
   };
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = notifications.filter(n => !(n.read || n.is_read)).length;
 
   if (showAsDropdown) {
     return (
@@ -109,7 +109,7 @@ const NotificationCenter = ({ userRole, showAsDropdown = false }) => {
               {notifications.slice(0, 5).map(notification => (
                 <div
                   key={notification.id}
-                  className={`notification-item ${!notification.read ? 'unread' : ''}`}
+                  className={`notification-item ${!(notification.read || notification.is_read) ? 'unread' : ''}`}
                   onClick={() => handleNotificationClick(notification)}
                 >
                   <div className="notification-icon">
