@@ -5,6 +5,7 @@ import { STATUS_LABELS, DEMANDE_STATUS, DEMANDE_STATUS_LABELS, DETAILED_WASTE_TY
 import Logo from '../../components/common/Logo';
 import NotificationCenter from '../../components/common/NotificationCenter';
 import { notificationService } from '../../services/notificationService';
+import jsPDF from 'jspdf';
 import '../../styles/AdministrateurDashboard.css';
 
 const AdministrateurDashboard = () => {
@@ -227,19 +228,13 @@ const AdministrateurDashboard = () => {
     const loadCollectesTerminees = async () => {
         try {
             // Charger les formulaires terminés pour les rapports
-            const formulairesResponse = await wasteService.getFormulaires();
+            const formulairesResponse = await wasteService.getAllFormulaires();
             const allFormulaires = formulairesResponse.results || formulairesResponse;
             
-            console.log('🔍 Debug formulaires:', allFormulaires);
-            console.log('🔍 Total formulaires récupérés:', allFormulaires.length);
-            
             // Filtrer seulement les formulaires terminés
-            const formulairesTermines = allFormulaires.filter(formulaire => {
-                console.log('🔍 Formulaire:', formulaire.reference, 'Statut:', formulaire.statut);
-                return formulaire.statut === 'TERMINE';
-            });
-            
-            console.log('🔍 Formulaires terminés trouvés:', formulairesTermines.length);
+            const formulairesTermines = allFormulaires.filter(formulaire => 
+                formulaire.statut === 'TERMINE'
+            );
             
             // Pour le rapport, nous utilisons les formulaires terminés comme "collectes terminées"
             setCollectesTerminees(formulairesTermines);
@@ -1238,44 +1233,92 @@ const AdministrateurDashboard = () => {
     // Function to generate PDF report for a specific formulaire
     const generateCollectionReport = async (formulaire) => {
         try {
-            // Create a detailed report content
-            const reportContent = `
-                RAPPORT DE FORMULAIRE ECOTRACE
-                ==============================
-                
-                Référence: ${formulaire.reference || formulaire.id}
-                Date de création: ${new Date(formulaire.created_at || formulaire.date_souhaitee).toLocaleDateString('fr-FR')}
-                Statut: ${STATUS_LABELS[formulaire.statut] || formulaire.statut}
-                Adresse: ${formulaire.adresse_collecte || formulaire.adresse}
-                
-                DÉTAILS DU FORMULAIRE
-                --------------------
-                Client: ${formulaire.utilisateur_nom || formulaire.utilisateur?.username || 'N/A'}
-                Type de déchets: ${formulaire.type_dechets}
-                Description: ${formulaire.description || 'Aucune description'}
-                Quantité estimée: ${formulaire.quantite_estimee || 'Non spécifiée'}
-                Mode de collecte: ${formulaire.mode_collecte || 'Non spécifié'}
-                
-                PLANIFICATION
-                ------------
-                Date souhaitée: ${new Date(formulaire.date_souhaitee).toLocaleDateString('fr-FR')}
-                Créneau: ${formulaire.creneau_horaire || 'Non spécifié'}
-                
-                ===========================
-                Rapport généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}
-                EcoTrace - Système de gestion des déchets
-            `;
+            // Créer un nouveau document PDF
+            const doc = new jsPDF();
             
-            // Create a downloadable text file (simple approach)
-            const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `rapport_formulaire_${formulaire.reference || formulaire.id}_${new Date().toISOString().split('T')[0]}.txt`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
+            // Configuration des styles
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const margin = 20;
+            const lineHeight = 8;
+            let yPosition = 30;
+            
+            // Titre principal
+            doc.setFontSize(20);
+            doc.setFont(undefined, 'bold');
+            doc.text('RAPPORT DE FORMULAIRE ECOTRACE', margin, yPosition);
+            
+            // Ligne de séparation
+            yPosition += 15;
+            doc.setLineWidth(0.5);
+            doc.line(margin, yPosition, pageWidth - margin, yPosition);
+            
+            // Informations principales
+            yPosition += 15;
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'normal');
+            
+            const addField = (label, value) => {
+                doc.setFont(undefined, 'bold');
+                doc.text(`${label}:`, margin, yPosition);
+                doc.setFont(undefined, 'normal');
+                doc.text(value || 'N/A', margin + 50, yPosition);
+                yPosition += lineHeight;
+            };
+            
+            addField('Référence', formulaire.reference || formulaire.id);
+            addField('Date de création', new Date(formulaire.created_at || formulaire.date_souhaitee).toLocaleDateString('fr-FR'));
+            addField('Statut', STATUS_LABELS[formulaire.statut] || formulaire.statut);
+            addField('Adresse', formulaire.adresse_collecte || formulaire.adresse);
+            
+            // Section détails
+            yPosition += 10;
+            doc.setFont(undefined, 'bold');
+            doc.setFontSize(14);
+            doc.text('DÉTAILS DU FORMULAIRE', margin, yPosition);
+            yPosition += 10;
+            doc.setFontSize(12);
+            
+            addField('Client', formulaire.utilisateur_nom || formulaire.utilisateur?.username);
+            addField('Type de déchets', formulaire.type_dechets);
+            addField('Quantité estimée', formulaire.quantite_estimee);
+            addField('Mode de collecte', formulaire.mode_collecte);
+            
+            // Description (peut être longue)
+            yPosition += 5;
+            doc.setFont(undefined, 'bold');
+            doc.text('Description:', margin, yPosition);
+            yPosition += lineHeight;
+            doc.setFont(undefined, 'normal');
+            
+            const description = formulaire.description || 'Aucune description';
+            const splitDescription = doc.splitTextToSize(description, pageWidth - 2 * margin);
+            doc.text(splitDescription, margin, yPosition);
+            yPosition += splitDescription.length * lineHeight;
+            
+            // Section planification
+            yPosition += 10;
+            doc.setFont(undefined, 'bold');
+            doc.setFontSize(14);
+            doc.text('PLANIFICATION', margin, yPosition);
+            yPosition += 10;
+            doc.setFontSize(12);
+            
+            addField('Date souhaitée', new Date(formulaire.date_souhaitee).toLocaleDateString('fr-FR'));
+            addField('Créneau horaire', formulaire.creneau_horaire);
+            
+            // Footer
+            yPosition += 20;
+            doc.setLineWidth(0.5);
+            doc.line(margin, yPosition, pageWidth - margin, yPosition);
+            yPosition += 10;
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'italic');
+            doc.text(`Rapport généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}`, margin, yPosition);
+            yPosition += lineHeight;
+            doc.text('EcoTrace - Système de gestion des déchets', margin, yPosition);
+            
+            // Sauvegarder le PDF
+            doc.save(`rapport_formulaire_${formulaire.reference || formulaire.id}_${new Date().toISOString().split('T')[0]}.pdf`);
             
             alert('Rapport généré et téléchargé avec succès !');
         } catch (error) {
@@ -1331,39 +1374,164 @@ const AdministrateurDashboard = () => {
                                 alert('Aucun formulaire terminé disponible');
                                 return;
                             }
-                            // Générer un rapport global
-                            const reportContent = `
-RAPPORT GLOBAL ECOTRACE
-======================
-
-Total des formulaires terminés: ${collectesTerminees.length}
-Période: ${new Date().toLocaleDateString('fr-FR')}
-
-DÉTAIL DES FORMULAIRES
----------------------
-${collectesTerminees.map((f, index) => 
-`${index + 1}. Formulaire ${f.reference || f.id}
-   Date de soumission: ${new Date(f.created_at || f.date_souhaitee).toLocaleDateString('fr-FR')}
-   Type de déchets: ${f.type_dechets}
-   Adresse: ${f.adresse_collecte || f.adresse}
-   Client: ${f.utilisateur_nom || f.utilisateur?.username || 'N/A'}
-   Statut: ${f.statut}
-`).join('\n')}
-
-===========================
-Rapport généré le ${new Date().toLocaleDateString('fr-FR')}
-EcoTrace - Système de gestion des déchets
-                            `;
                             
-                            const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
-                            const url = window.URL.createObjectURL(blob);
-                            const link = document.createElement('a');
-                            link.href = url;
-                            link.download = `rapport_global_${new Date().toISOString().split('T')[0]}.txt`;
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
-                            window.URL.revokeObjectURL(url);
+                            // Calculer les statistiques
+                            const stats = {
+                                total: collectesTerminees.length,
+                                parType: {},
+                                parMois: {},
+                                parMode: {},
+                                parQuantite: {}
+                            };
+                            
+                            collectesTerminees.forEach(f => {
+                                // Statistiques par type
+                                stats.parType[f.type_dechets] = (stats.parType[f.type_dechets] || 0) + 1;
+                                
+                                // Statistiques par mois
+                                const mois = new Date(f.created_at || f.date_souhaitee).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+                                stats.parMois[mois] = (stats.parMois[mois] || 0) + 1;
+                                
+                                // Statistiques par mode de collecte
+                                stats.parMode[f.mode_collecte] = (stats.parMode[f.mode_collecte] || 0) + 1;
+                                
+                                // Statistiques par quantité
+                                stats.parQuantite[f.quantite_estimee] = (stats.parQuantite[f.quantite_estimee] || 0) + 1;
+                            });
+                            
+                            // Générer un rapport global PDF
+                            const doc = new jsPDF();
+                            const pageWidth = doc.internal.pageSize.getWidth();
+                            const margin = 20;
+                            let yPosition = 30;
+                            
+                            // Titre
+                            doc.setFontSize(20);
+                            doc.setFont(undefined, 'bold');
+                            doc.text('RAPPORT GLOBAL ECOTRACE', margin, yPosition);
+                            
+                            // Ligne de séparation
+                            yPosition += 15;
+                            doc.setLineWidth(0.5);
+                            doc.line(margin, yPosition, pageWidth - margin, yPosition);
+                            
+                            // Résumé exécutif
+                            yPosition += 15;
+                            doc.setFontSize(14);
+                            doc.setFont(undefined, 'bold');
+                            doc.text('RÉSUMÉ EXÉCUTIF', margin, yPosition);
+                            yPosition += 10;
+                            doc.setFontSize(12);
+                            doc.setFont(undefined, 'normal');
+                            doc.text(`Total des formulaires terminés: ${stats.total}`, margin, yPosition);
+                            yPosition += 8;
+                            doc.text(`Période d'analyse: ${new Date().toLocaleDateString('fr-FR')}`, margin, yPosition);
+                            yPosition += 8;
+                            doc.text(`Taux de réussite: 100% (formulaires terminés)`, margin, yPosition);
+                            
+                            // Statistiques par type de déchets
+                            yPosition += 20;
+                            doc.setFont(undefined, 'bold');
+                            doc.setFontSize(14);
+                            doc.text('RÉPARTITION PAR TYPE DE DÉCHETS', margin, yPosition);
+                            yPosition += 10;
+                            doc.setFontSize(12);
+                            doc.setFont(undefined, 'normal');
+                            
+                            Object.entries(stats.parType).forEach(([type, count]) => {
+                                const pourcentage = ((count / stats.total) * 100).toFixed(1);
+                                doc.text(`• ${type}: ${count} (${pourcentage}%)`, margin, yPosition);
+                                yPosition += 8;
+                            });
+                            
+                            // Statistiques par mode de collecte
+                            yPosition += 15;
+                            doc.setFont(undefined, 'bold');
+                            doc.setFontSize(14);
+                            doc.text('RÉPARTITION PAR MODE DE COLLECTE', margin, yPosition);
+                            yPosition += 10;
+                            doc.setFontSize(12);
+                            doc.setFont(undefined, 'normal');
+                            
+                            Object.entries(stats.parMode).forEach(([mode, count]) => {
+                                const pourcentage = ((count / stats.total) * 100).toFixed(1);
+                                const modeLabel = mode === 'domicile' ? 'Collecte à domicile' : 'Apport volontaire';
+                                doc.text(`• ${modeLabel}: ${count} (${pourcentage}%)`, margin, yPosition);
+                                yPosition += 8;
+                            });
+                            
+                            // Statistiques par quantité
+                            yPosition += 15;
+                            doc.setFont(undefined, 'bold');
+                            doc.setFontSize(14);
+                            doc.text('RÉPARTITION PAR QUANTITÉ ESTIMÉE', margin, yPosition);
+                            yPosition += 10;
+                            doc.setFontSize(12);
+                            doc.setFont(undefined, 'normal');
+                            
+                            Object.entries(stats.parQuantite).forEach(([quantite, count]) => {
+                                const pourcentage = ((count / stats.total) * 100).toFixed(1);
+                                doc.text(`• ${quantite}: ${count} (${pourcentage}%)`, margin, yPosition);
+                                yPosition += 8;
+                            });
+                            
+                            // Tendances mensuelles
+                            yPosition += 15;
+                            doc.setFont(undefined, 'bold');
+                            doc.setFontSize(14);
+                            doc.text('TENDANCES MENSUELLES', margin, yPosition);
+                            yPosition += 10;
+                            doc.setFontSize(12);
+                            doc.setFont(undefined, 'normal');
+                            
+                            Object.entries(stats.parMois).forEach(([mois, count]) => {
+                                doc.text(`• ${mois}: ${count} formulaires`, margin, yPosition);
+                                yPosition += 8;
+                            });
+                            
+                            // Vérifier si on a besoin d'une nouvelle page
+                            if (yPosition > 200) {
+                                doc.addPage();
+                                yPosition = 30;
+                            }
+                            
+                            // Liste détaillée des formulaires
+                            yPosition += 20;
+                            doc.setFont(undefined, 'bold');
+                            doc.setFontSize(14);
+                            doc.text('DÉTAIL DES FORMULAIRES', margin, yPosition);
+                            yPosition += 10;
+                            doc.setFontSize(10);
+                            doc.setFont(undefined, 'normal');
+                            
+                            collectesTerminees.forEach((f, index) => {
+                                if (yPosition > 250) { // Nouvelle page si nécessaire
+                                    doc.addPage();
+                                    yPosition = 30;
+                                }
+                                
+                                doc.text(`${index + 1}. ${f.reference || f.id}`, margin, yPosition);
+                                yPosition += 6;
+                                doc.text(`   Date: ${new Date(f.created_at || f.date_souhaitee).toLocaleDateString('fr-FR')}`, margin + 5, yPosition);
+                                yPosition += 6;
+                                doc.text(`   Type: ${f.type_dechets} | Quantité: ${f.quantite_estimee || 'N/A'}`, margin + 5, yPosition);
+                                yPosition += 6;
+                                doc.text(`   Mode: ${f.mode_collecte === 'domicile' ? 'Domicile' : 'Apport'} | Adresse: ${(f.adresse_collecte || f.adresse || '').substring(0, 40)}`, margin + 5, yPosition);
+                                yPosition += 10;
+                            });
+                            
+                            // Footer
+                            yPosition += 15;
+                            doc.setLineWidth(0.5);
+                            doc.line(margin, yPosition, pageWidth - margin, yPosition);
+                            yPosition += 10;
+                            doc.setFontSize(10);
+                            doc.setFont(undefined, 'italic');
+                            doc.text(`Rapport généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}`, margin, yPosition);
+                            yPosition += 5;
+                            doc.text('EcoTrace - Système de gestion des déchets électroniques', margin, yPosition);
+                            
+                            doc.save(`rapport_global_ecotrace_${new Date().toISOString().split('T')[0]}.pdf`);
                         }}
                     >
                         📊 Rapport Global
@@ -1379,33 +1547,180 @@ EcoTrace - Système de gestion des déchets
                                 return;
                             }
                             
-                            const reportContent = `
-RAPPORT MENSUEL ECOTRACE
-=======================
-
-Formulaires terminés ce mois: ${thisMonth.length}
-Période: ${new Date().toLocaleDateString('fr-FR')}
-
-${thisMonth.map((f, index) => 
-`${index + 1}. Formulaire ${f.reference || f.id}
-   Date: ${new Date(f.created_at || f.date_souhaitee).toLocaleDateString('fr-FR')}
-   Type: ${f.type_dechets}
-   Adresse: ${f.adresse_collecte || f.adresse}
-`).join('\n')}
-
-===========================
-Rapport généré le ${new Date().toLocaleDateString('fr-FR')}
-                            `;
+                            // Calculer les statistiques mensuelles
+                            const monthStats = {
+                                total: thisMonth.length,
+                                parType: {},
+                                parMode: {},
+                                parQuantite: {},
+                                parSemaine: {}
+                            };
                             
-                            const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
-                            const url = window.URL.createObjectURL(blob);
-                            const link = document.createElement('a');
-                            link.href = url;
-                            link.download = `rapport_mensuel_${new Date().toISOString().split('T')[0]}.txt`;
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
-                            window.URL.revokeObjectURL(url);
+                            thisMonth.forEach(f => {
+                                // Statistiques par type
+                                monthStats.parType[f.type_dechets] = (monthStats.parType[f.type_dechets] || 0) + 1;
+                                
+                                // Statistiques par mode de collecte
+                                monthStats.parMode[f.mode_collecte] = (monthStats.parMode[f.mode_collecte] || 0) + 1;
+                                
+                                // Statistiques par quantité
+                                monthStats.parQuantite[f.quantite_estimee] = (monthStats.parQuantite[f.quantite_estimee] || 0) + 1;
+                                
+                                // Statistiques par semaine
+                                const semaine = Math.ceil((new Date(f.created_at || f.date_souhaitee).getDate()) / 7);
+                                monthStats.parSemaine[`Semaine ${semaine}`] = (monthStats.parSemaine[`Semaine ${semaine}`] || 0) + 1;
+                            });
+                            
+                            // Calculer les comparaisons avec le mois précédent
+                            const lastMonth = collectesTerminees.filter(f => {
+                                const date = new Date(f.created_at || f.date_souhaitee);
+                                const lastMonthStart = new Date(Date.now() - 60*24*60*60*1000);
+                                const thisMonthStart = new Date(Date.now() - 30*24*60*60*1000);
+                                return date >= lastMonthStart && date < thisMonthStart;
+                            });
+                            
+                            const evolution = thisMonth.length - lastMonth.length;
+                            const evolutionPct = lastMonth.length > 0 ? ((evolution / lastMonth.length) * 100).toFixed(1) : '0';
+                            
+                            // Générer un rapport mensuel PDF
+                            const doc = new jsPDF();
+                            const pageWidth = doc.internal.pageSize.getWidth();
+                            const margin = 20;
+                            let yPosition = 30;
+                            
+                            // Titre
+                            doc.setFontSize(20);
+                            doc.setFont(undefined, 'bold');
+                            doc.text('RAPPORT MENSUEL ECOTRACE', margin, yPosition);
+                            
+                            // Ligne de séparation
+                            yPosition += 15;
+                            doc.setLineWidth(0.5);
+                            doc.line(margin, yPosition, pageWidth - margin, yPosition);
+                            
+                            // Résumé mensuel
+                            yPosition += 15;
+                            doc.setFontSize(14);
+                            doc.setFont(undefined, 'bold');
+                            doc.text('RÉSUMÉ DU MOIS', margin, yPosition);
+                            yPosition += 10;
+                            doc.setFontSize(12);
+                            doc.setFont(undefined, 'normal');
+                            doc.text(`Formulaires terminés: ${monthStats.total}`, margin, yPosition);
+                            yPosition += 8;
+                            doc.text(`Mois précédent: ${lastMonth.length}`, margin, yPosition);
+                            yPosition += 8;
+                            const evolutionText = evolution >= 0 ? `+${evolution} (+${evolutionPct}%)` : `${evolution} (${evolutionPct}%)`;
+                            doc.text(`Évolution: ${evolutionText}`, margin, yPosition);
+                            yPosition += 8;
+                            doc.text(`Moyenne quotidienne: ${(monthStats.total / 30).toFixed(1)} formulaires/jour`, margin, yPosition);
+                            
+                            // Performance hebdomadaire
+                            yPosition += 20;
+                            doc.setFont(undefined, 'bold');
+                            doc.setFontSize(14);
+                            doc.text('PERFORMANCE HEBDOMADAIRE', margin, yPosition);
+                            yPosition += 10;
+                            doc.setFontSize(12);
+                            doc.setFont(undefined, 'normal');
+                            
+                            Object.entries(monthStats.parSemaine).forEach(([semaine, count]) => {
+                                const pourcentage = ((count / monthStats.total) * 100).toFixed(1);
+                                doc.text(`• ${semaine}: ${count} formulaires (${pourcentage}%)`, margin, yPosition);
+                                yPosition += 8;
+                            });
+                            
+                            // Répartition par type de déchets
+                            yPosition += 15;
+                            doc.setFont(undefined, 'bold');
+                            doc.setFontSize(14);
+                            doc.text('TYPES DE DÉCHETS LES PLUS COLLECTÉS', margin, yPosition);
+                            yPosition += 10;
+                            doc.setFontSize(12);
+                            doc.setFont(undefined, 'normal');
+                            
+                            // Trier par popularité
+                            const typesSorted = Object.entries(monthStats.parType).sort((a, b) => b[1] - a[1]);
+                            typesSorted.forEach(([type, count]) => {
+                                const pourcentage = ((count / monthStats.total) * 100).toFixed(1);
+                                doc.text(`• ${type}: ${count} (${pourcentage}%)`, margin, yPosition);
+                                yPosition += 8;
+                            });
+                            
+                            // Modes de collecte préférés
+                            yPosition += 15;
+                            doc.setFont(undefined, 'bold');
+                            doc.setFontSize(14);
+                            doc.text('MODES DE COLLECTE PRÉFÉRÉS', margin, yPosition);
+                            yPosition += 10;
+                            doc.setFontSize(12);
+                            doc.setFont(undefined, 'normal');
+                            
+                            Object.entries(monthStats.parMode).forEach(([mode, count]) => {
+                                const pourcentage = ((count / monthStats.total) * 100).toFixed(1);
+                                const modeLabel = mode === 'domicile' ? 'Collecte à domicile' : 'Apport volontaire';
+                                doc.text(`• ${modeLabel}: ${count} (${pourcentage}%)`, margin, yPosition);
+                                yPosition += 8;
+                            });
+                            
+                            // Analyse des quantités
+                            yPosition += 15;
+                            doc.setFont(undefined, 'bold');
+                            doc.setFontSize(14);
+                            doc.text('ANALYSE DES QUANTITÉS', margin, yPosition);
+                            yPosition += 10;
+                            doc.setFontSize(12);
+                            doc.setFont(undefined, 'normal');
+                            
+                            Object.entries(monthStats.parQuantite).forEach(([quantite, count]) => {
+                                const pourcentage = ((count / monthStats.total) * 100).toFixed(1);
+                                doc.text(`• ${quantite}: ${count} formulaires (${pourcentage}%)`, margin, yPosition);
+                                yPosition += 8;
+                            });
+                            
+                            // Vérifier si on a besoin d'une nouvelle page
+                            if (yPosition > 200) {
+                                doc.addPage();
+                                yPosition = 30;
+                            }
+                            
+                            // Liste détaillée des formulaires du mois
+                            yPosition += 20;
+                            doc.setFont(undefined, 'bold');
+                            doc.setFontSize(14);
+                            doc.text('DÉTAIL DES FORMULAIRES DU MOIS', margin, yPosition);
+                            yPosition += 10;
+                            doc.setFontSize(10);
+                            doc.setFont(undefined, 'normal');
+                            
+                            thisMonth.forEach((f, index) => {
+                                if (yPosition > 250) { // Nouvelle page si nécessaire
+                                    doc.addPage();
+                                    yPosition = 30;
+                                }
+                                
+                                doc.text(`${index + 1}. ${f.reference || f.id}`, margin, yPosition);
+                                yPosition += 6;
+                                doc.text(`   Date: ${new Date(f.created_at || f.date_souhaitee).toLocaleDateString('fr-FR')}`, margin + 5, yPosition);
+                                yPosition += 6;
+                                doc.text(`   Type: ${f.type_dechets} | Quantité: ${f.quantite_estimee || 'N/A'}`, margin + 5, yPosition);
+                                yPosition += 6;
+                                doc.text(`   Mode: ${f.mode_collecte === 'domicile' ? 'Domicile' : 'Apport'} | Adresse: ${(f.adresse_collecte || f.adresse || '').substring(0, 40)}`, margin + 5, yPosition);
+                                yPosition += 10;
+                            });
+                            
+                            // Footer
+                            yPosition += 15;
+                            doc.setLineWidth(0.5);
+                            doc.line(margin, yPosition, pageWidth - margin, yPosition);
+                            yPosition += 10;
+                            doc.setFontSize(10);
+                            doc.setFont(undefined, 'italic');
+                            doc.text(`Rapport mensuel généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}`, margin, yPosition);
+                            yPosition += 5;
+                            doc.text('EcoTrace - Système de gestion des déchets électroniques', margin, yPosition);
+                            
+                            doc.save(`rapport_mensuel_ecotrace_${new Date().toISOString().split('T')[0]}.pdf`);
                         }}
                     >
                         📅 Rapport Mensuel
