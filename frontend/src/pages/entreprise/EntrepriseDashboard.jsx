@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { authService, userService, wasteService } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import Logo from '../../components/common/Logo';
+import NotificationCenter from '../../components/common/NotificationCenter';
+import { notificationService } from '../../services/notificationService';
 import '../../styles/EntrepriseDashboard.css';
 
 const EntrepriseDashboard = () => {
@@ -146,6 +148,7 @@ const EntrepriseDashboard = () => {
           </div>
           
           <div className="entreprise-user-badge">
+            <NotificationCenter userRole="ENTREPRISE" showAsDropdown={true} />
             <span className="entreprise-user-name">
               Bonjour, {user.company_name || user.first_name || user.username}
             </span>

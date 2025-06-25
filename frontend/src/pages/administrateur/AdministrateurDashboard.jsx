@@ -3,6 +3,8 @@ import { authService, userService, wasteService } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import { STATUS_LABELS, DEMANDE_STATUS, DEMANDE_STATUS_LABELS, DETAILED_WASTE_TYPES, ROLE_COLORS, ROLE_LABELS } from '../../utils/constants';
 import Logo from '../../components/common/Logo';
+import NotificationCenter from '../../components/common/NotificationCenter';
+import { notificationService } from '../../services/notificationService';
 import '../../styles/AdministrateurDashboard.css';
 
 const AdministrateurDashboard = () => {
@@ -16,8 +18,8 @@ const AdministrateurDashboard = () => {
     const [utilisateurs, setUtilisateurs] = useState([]);
     const [demandes, setDemandes] = useState([]);
     const [collectes, setCollectes] = useState([]);
-    const [sousTraitants, setSousTraitants] = useState([]);
-    const [notifications, setNotifications] = useState([]);
+    const [collectesTerminees, setCollectesTerminees] = useState([]);
+    const [sidebarNotifications, setSidebarNotifications] = useState([]);
 
     // États pour la gestion des profils
     const [selectedUser, setSelectedUser] = useState(null);
@@ -65,6 +67,12 @@ const AdministrateurDashboard = () => {
         loadInitialData();
     }, [navigate]);
 
+    // Effect to track notifications for sidebar badge
+    useEffect(() => {
+        const unsubscribe = notificationService.addListener(setSidebarNotifications);
+        return unsubscribe;
+    }, []);
+
     const loadInitialData = async () => {
         try {
             setLoading(true);
@@ -74,8 +82,7 @@ const AdministrateurDashboard = () => {
                 loadUtilisateurs(),
                 loadDemandes(),
                 loadCollectes(),
-                loadSousTraitants(),
-                loadNotifications()
+                loadCollectesTerminees()
             ]);
         } catch (error) {
             console.error('Erreur lors du chargement:', error);
@@ -114,11 +121,7 @@ const AdministrateurDashboard = () => {
         } catch (error) {
             console.error('Erreur utilisateurs:', error);
             // Données simulées en cas d'erreur
-            const mockUsers = [
-                { id: 1, username: 'entreprise1', email: 'contact@entreprise1.com', first_name: 'Jean', last_name: 'Dupont', role: 'ENTREPRISE', is_active: true, date_joined: '2024-01-15' },
-                { id: 2, username: 'transporteur1', email: 'transport@logistic.com', first_name: 'Marie', last_name: 'Martin', role: 'TRANSPORTEUR', is_active: true, date_joined: '2024-02-01' },
-                { id: 3, username: 'particulier1', email: 'pierre@email.com', first_name: 'Pierre', last_name: 'Durand', role: 'PARTICULIER', is_active: false, date_joined: '2024-01-20' }
-            ];
+            const mockUsers = [];
             setUtilisateurs(mockUsers);
         }
     };    const loadDemandes = async () => {
@@ -159,40 +162,7 @@ const AdministrateurDashboard = () => {
 
             // Simuler des demandes supplémentaires pour la démo si pas de vraies données
             if (mappedFormulaires.length === 0) {
-                const mockDemandes = [
-                    {
-                        id: 'DEM-001',
-                        entrepriseNom: 'EcoTech Solutions',
-                        utilisateur_nom: 'Marie Dubois',
-                        email: 'marie@ecotech.fr',
-                        telephone: '01 23 45 67 89',
-                        typeDechet: 'ELECTRONIQUE',
-                        quantite: 150,
-                        description: 'Ordinateurs et équipements électroniques obsolètes',
-                        adresse_collecte: '15 Rue de la Innovation, 75011 Paris',
-                        date_souhaitee: '2024-02-15',
-                        statut: 'EN_ATTENTE',
-                        date_creation: '2024-02-01T10:30:00Z',
-                        urgence: 'normale',
-                        instructions_speciales: 'Accès par la cour arrière'
-                    },
-                    {
-                        id: 'DEM-002',
-                        entrepriseNom: 'GreenPlastic Corp',
-                        utilisateur_nom: 'Jean Martin',
-                        email: 'jean@greenplastic.com',
-                        telephone: '01 34 56 78 90',
-                        typeDechet: 'PLASTIQUE',
-                        quantite: 500,
-                        description: 'Déchets plastiques industriels recyclables',
-                        adresse_collecte: '42 Avenue des Plastiques, 69000 Lyon',
-                        date_souhaitee: '2024-02-20',
-                        statut: 'EN_ATTENTE',
-                        date_creation: '2024-02-03T14:15:00Z',
-                        urgence: 'haute',
-                        instructions_speciales: 'Matières dangereuses - équipement spécialisé requis'
-                    }
-                ];
+                const mockDemandes = [];
                 setDemandes([...localForms, ...mockDemandes]);
             } else {
                 setDemandes([...mappedFormulaires, ...localForms]);
@@ -254,45 +224,22 @@ const AdministrateurDashboard = () => {
         }
     };
 
-    const loadSousTraitants = async () => {
+    const loadCollectesTerminees = async () => {
         try {
-            // Charger les sous-traitants (transporteurs et techniciens)
-            const mockSousTraitants = [
-                { id: 1, nom: 'Transport Vert', type: 'TRANSPORTEUR', secteur: 'Nord', statut: 'actif', collectes_mois: 45, note: 4.5 },
-                { id: 2, nom: 'EcoRecycle Tech', type: 'TECHNICIEN', secteur: 'Centre', statut: 'actif', traitements_mois: 32, note: 4.8 },
-                { id: 3, nom: 'Logistics Pro', type: 'TRANSPORTEUR', secteur: 'Sud', statut: 'inactif', collectes_mois: 0, note: 3.9 }
-            ];
-            setSousTraitants(mockSousTraitants);
+            // Charger les collectes terminées pour les rapports
+            const response = await wasteService.getCollectes();
+            const allCollectes = response.results || response;
+            
+            // Filtrer seulement les collectes terminées
+            const collectesTerminees = allCollectes.filter(collecte => 
+                collecte.statut === 'TERMINEE' || collecte.statut === 'COMPLETED'
+            );
+            
+            setCollectesTerminees(collectesTerminees);
         } catch (error) {
-            console.error('Erreur sous-traitants:', error);
+            console.error('Erreur collectes terminées:', error);
+            setCollectesTerminees([]);
         }
-    };
-
-    const loadNotifications = async () => {
-        const mockNotifications = [
-            {
-                id: 1,
-                type: 'nouveau_utilisateur',
-                message: 'Nouvelle inscription entreprise en attente de validation',
-                time: '30min',
-                unread: true
-            },
-            {
-                id: 2,
-                type: 'demande_urgente',
-                message: 'Demande de collecte urgente - déchets dangereux',
-                time: '2h',
-                unread: true
-            },
-            {
-                id: 3,
-                type: 'rapport_mensuel',
-                message: 'Rapport mensuel disponible',
-                time: '1j',
-                unread: false
-            }
-        ];
-        setNotifications(mockNotifications);
     };
 
     const handleLogout = async () => {
@@ -528,10 +475,10 @@ const AdministrateurDashboard = () => {
                 </div>
 
                 <div className="stat-card">
-                    <div className="stat-icon">🏢</div>
+                    <div className="stat-icon">📊</div>
                     <div className="stat-content">
-                        <div className="stat-number">{stats.sous_traitants_actifs || 0}</div>
-                        <div className="stat-label">Sous-traitants Actifs</div>
+                        <div className="stat-number">{collectesTerminees.length || 0}</div>
+                        <div className="stat-label">Rapports Disponibles</div>
                     </div>
                 </div>
             </div>
@@ -560,9 +507,9 @@ const AdministrateurDashboard = () => {
                     </button>
                     <button
                         className="action-btn quaternary"
-                        onClick={() => setActiveSection('sous-traitants')}
+                        onClick={() => setActiveSection('rapports')}
                     >
-                        🏢 Superviser Sous-traitants
+                        📊 Générer Rapports
                     </button>
                 </div>
             </div>
@@ -571,27 +518,7 @@ const AdministrateurDashboard = () => {
             <div className="urgent-section">
                 <h3>Activité Récente</h3>
                 <div className="urgent-list">
-                    <div className="urgent-item">
-                        <div className="urgent-info">
-                            <span className="urgent-ref">Nouvelle inscription</span>
-                            <span className="urgent-date">Entreprise EcoTech</span>
-                        </div>
-                        <button className="btn-urgent">Valider</button>
-                    </div>
-                    <div className="urgent-item">
-                        <div className="urgent-info">
-                            <span className="urgent-ref">Demande urgente</span>
-                            <span className="urgent-date">Déchets dangereux</span>
-                        </div>
-                        <button className="btn-urgent">Traiter</button>
-                    </div>
-                    <div className="urgent-item">
-                        <div className="urgent-info">
-                            <span className="urgent-ref">Rapport mensuel</span>
-                            <span className="urgent-date">Janvier 2024</span>
-                        </div>
-                        <button className="btn-urgent">Consulter</button>
-                    </div>
+                    
                 </div>
             </div>
         </div>
@@ -1301,6 +1228,254 @@ const AdministrateurDashboard = () => {
         </div>
     );
 
+    // Function to generate PDF report for a specific collection
+    const generateCollectionReport = async (collecte) => {
+        try {
+            // Create a detailed report content
+            const reportContent = `
+                RAPPORT DE COLLECTE ECOTRACE
+                ===========================
+                
+                Référence: ${collecte.reference || collecte.id}
+                Date de collecte: ${new Date(collecte.date_collecte).toLocaleDateString('fr-FR')}
+                Statut: ${STATUS_LABELS[collecte.statut] || collecte.statut}
+                Adresse: ${collecte.adresse}
+                
+                DÉTAILS DE LA COLLECTE
+                ---------------------
+                Transporteur: ${collecte.transporteur || 'Non assigné'}
+                Date de création: ${new Date(collecte.created_at).toLocaleDateString('fr-FR')}
+                
+                DÉCHETS COLLECTÉS
+                ----------------
+                Type: ${collecte.type_dechet || 'Non spécifié'}
+                Quantité: ${collecte.quantite || 'Non spécifiée'}
+                
+                NOTES
+                -----
+                ${collecte.notes || 'Aucune note'}
+                
+                ===========================
+                Rapport généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}
+                EcoTrace - Système de gestion des déchets
+            `;
+            
+            // Create a downloadable text file (simple approach)
+            const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `rapport_collecte_${collecte.reference || collecte.id}_${new Date().toISOString().split('T')[0]}.txt`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            
+            alert('Rapport généré et téléchargé avec succès !');
+        } catch (error) {
+            console.error('Erreur génération rapport:', error);
+            alert('Erreur lors de la génération du rapport.');
+        }
+    };
+
+    const renderRapports = () => (
+        <div className="rapports-section">
+            <div className="section-header">
+                <h2>Génération de Rapports</h2>
+                <p>Générer des rapports détaillés pour les collectes terminées</p>
+            </div>
+
+            {/* Statistiques des rapports */}
+            <div className="stats-grid">
+                <div className="stat-card">
+                    <div className="stat-icon">📊</div>
+                    <div className="stat-content">
+                        <div className="stat-number">{collectesTerminees.length}</div>
+                        <div className="stat-label">Collectes Terminées</div>
+                    </div>
+                </div>
+                <div className="stat-card">
+                    <div className="stat-icon">📄</div>
+                    <div className="stat-content">
+                        <div className="stat-number">{collectesTerminees.length}</div>
+                        <div className="stat-label">Rapports Disponibles</div>
+                    </div>
+                </div>
+                <div className="stat-card">
+                    <div className="stat-icon">📅</div>
+                    <div className="stat-content">
+                        <div className="stat-number">
+                            {collectesTerminees.filter(c => 
+                                new Date(c.date_collecte) >= new Date(Date.now() - 30*24*60*60*1000)
+                            ).length}
+                        </div>
+                        <div className="stat-label">Ce Mois</div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Actions rapides */}
+            <div className="quick-actions">
+                <h3>Actions Rapides</h3>
+                <div className="actions-grid">
+                    <button 
+                        className="action-btn primary"
+                        onClick={() => {
+                            if (collectesTerminees.length === 0) {
+                                alert('Aucune collecte terminée disponible');
+                                return;
+                            }
+                            // Générer un rapport global
+                            const reportContent = `
+RAPPORT GLOBAL ECOTRACE
+======================
+
+Total des collectes terminées: ${collectesTerminees.length}
+Période: ${new Date().toLocaleDateString('fr-FR')}
+
+DÉTAIL DES COLLECTES
+-------------------
+${collectesTerminees.map((c, index) => 
+`${index + 1}. Collecte ${c.reference || c.id}
+   Date: ${new Date(c.date_collecte).toLocaleDateString('fr-FR')}
+   Adresse: ${c.adresse}
+   Transporteur: ${c.transporteur || 'Non assigné'}
+`).join('\n')}
+
+===========================
+Rapport généré le ${new Date().toLocaleDateString('fr-FR')}
+EcoTrace - Système de gestion des déchets
+                            `;
+                            
+                            const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
+                            const url = window.URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.download = `rapport_global_${new Date().toISOString().split('T')[0]}.txt`;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            window.URL.revokeObjectURL(url);
+                        }}
+                    >
+                        📊 Rapport Global
+                    </button>
+                    <button 
+                        className="action-btn secondary"
+                        onClick={() => {
+                            const thisMonth = collectesTerminees.filter(c => 
+                                new Date(c.date_collecte) >= new Date(Date.now() - 30*24*60*60*1000)
+                            );
+                            if (thisMonth.length === 0) {
+                                alert('Aucune collecte ce mois');
+                                return;
+                            }
+                            
+                            const reportContent = `
+RAPPORT MENSUEL ECOTRACE
+=======================
+
+Collectes de ce mois: ${thisMonth.length}
+Période: ${new Date().toLocaleDateString('fr-FR')}
+
+${thisMonth.map((c, index) => 
+`${index + 1}. Collecte ${c.reference || c.id}
+   Date: ${new Date(c.date_collecte).toLocaleDateString('fr-FR')}
+   Adresse: ${c.adresse}
+`).join('\n')}
+
+===========================
+Rapport généré le ${new Date().toLocaleDateString('fr-FR')}
+                            `;
+                            
+                            const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
+                            const url = window.URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.download = `rapport_mensuel_${new Date().toISOString().split('T')[0]}.txt`;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            window.URL.revokeObjectURL(url);
+                        }}
+                    >
+                        📅 Rapport Mensuel
+                    </button>
+                </div>
+            </div>
+
+            {/* Liste des collectes terminées */}
+            <div className="collectes-section">
+                <h3>Collectes Terminées - Rapports Individuels</h3>
+                
+                <div className="table-container">
+                    <div className="table-header">
+                        <div className="table-cell">Référence</div>
+                        <div className="table-cell">Date Collecte</div>
+                        <div className="table-cell">Transporteur</div>
+                        <div className="table-cell">Adresse</div>
+                        <div className="table-cell">Statut</div>
+                        <div className="table-cell">Actions</div>
+                    </div>
+                    
+                    {collectesTerminees.map(collecte => (
+                        <div key={collecte.id} className="table-row">
+                            <div className="table-cell">
+                                <strong>{collecte.reference || collecte.id}</strong>
+                            </div>
+                            <div className="table-cell">
+                                {new Date(collecte.date_collecte).toLocaleDateString('fr-FR')}
+                            </div>
+                            <div className="table-cell">
+                                {collecte.transporteur || 'Non assigné'}
+                            </div>
+                            <div className="table-cell">
+                                {collecte.adresse}
+                            </div>
+                            <div className="table-cell">
+                                <span 
+                                    className="status-pill"
+                                    style={{ backgroundColor: '#10b981', color: 'white' }}
+                                >
+                                    {STATUS_LABELS[collecte.statut] || 'Terminée'}
+                                </span>
+                            </div>
+                            <div className="table-cell">
+                                <div className="action-buttons">
+                                    <button 
+                                        className="btn-sm primary"
+                                        onClick={() => generateCollectionReport(collecte)}
+                                    >
+                                        📄 Générer Rapport
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {collectesTerminees.length === 0 && (
+                    <div className="empty-state">
+                        <div className="empty-icon">📊</div>
+                        <h3>Aucune collecte terminée</h3>
+                        <p>Aucune collecte terminée n'est disponible pour générer des rapports.</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+
+    const renderNotifications = () => (
+        <div className="notifications-section">
+            <div className="section-header">
+                <h2>Centre de Notifications</h2>
+                <p>Toutes vos notifications administratives en temps réel</p>
+            </div>
+            
+            <NotificationCenter userRole="ADMINISTRATEUR" showAsDropdown={false} />
+        </div>
+    );
+
 if (loading) {
     return (
         <div className="loading-container">
@@ -1321,6 +1496,7 @@ return (
                 </div>
 
                 <div className="dashboard-user-info">
+                    <NotificationCenter userRole="ADMINISTRATEUR" showAsDropdown={true} />
                     <span className="user-welcome">
                         Bonjour, {user?.first_name || user?.username}
                     </span>
@@ -1363,11 +1539,11 @@ return (
                     Planifier une Collecte
                 </button>
                 <button
-                    className={`menu-item ${activeSection === 'sous-traitants' ? 'active' : ''}`}
-                    onClick={() => setActiveSection('sous-traitants')}
+                    className={`menu-item ${activeSection === 'rapports' ? 'active' : ''}`}
+                    onClick={() => setActiveSection('rapports')}
                 >
-                    <span className="menu-icon">🏢</span>
-                    Superviser les Sous-traitants
+                    <span className="menu-icon">📊</span>
+                    Générer Rapports
                 </button>
                 <button
                     className={`menu-item ${activeSection === 'notifications' ? 'active' : ''}`}
@@ -1375,9 +1551,9 @@ return (
                 >
                     <span className="menu-icon">🔔</span>
                     Notifications
-                    {notifications.filter(n => n.unread).length > 0 && (
+                    {sidebarNotifications.filter(n => !n.read).length > 0 && (
                         <span className="notification-badge">
-                            {notifications.filter(n => n.unread).length}
+                            {sidebarNotifications.filter(n => !n.read).length}
                         </span>
                     )}
                 </button>
@@ -1390,7 +1566,8 @@ return (
             {activeSection === 'demandes' && renderDemandes()}
             {activeSection === 'utilisateurs' && renderUtilisateurs()}
             {activeSection === 'collectes' && renderCollectes()}
-            {/* Additional sections would be implemented here */}
+            {activeSection === 'rapports' && renderRapports()}
+            {activeSection === 'notifications' && renderNotifications()}
         </main>
     </div>
 );

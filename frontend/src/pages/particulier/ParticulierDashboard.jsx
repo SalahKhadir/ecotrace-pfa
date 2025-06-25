@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import { authService, userService, wasteService } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import Logo from '../../components/common/Logo';
+import NotificationCenter from '../../components/common/NotificationCenter';
+import { notificationService } from '../../services/notificationService';
 
 const ParticulierDashboard = () => {
   const [user, setUser] = useState(null);
@@ -125,6 +127,7 @@ const ParticulierDashboard = () => {
           </div>
           
           <div className="dashboard-user-info">
+            <NotificationCenter userRole="PARTICULIER" showAsDropdown={true} />
             <span className="user-welcome">
               Bonjour, {user.first_name || user.username}
             </span>

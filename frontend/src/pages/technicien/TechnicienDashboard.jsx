@@ -3,6 +3,8 @@ import { authService, userService, wasteService } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import { STATUS_LABELS } from '../../utils/constants';
 import Logo from '../../components/common/Logo';
+import NotificationCenter from '../../components/common/NotificationCenter';
+import { notificationService } from '../../services/notificationService';
 import '../../styles/TechnicienDashboard.css';
 
 const TechnicienDashboard = () => {
@@ -15,7 +17,7 @@ const TechnicienDashboard = () => {
   const [stats, setStats] = useState({});
   const [dechetsRecus, setDechetsRecus] = useState([]);
   const [processusValorisation, setProcessusValorisation] = useState([]);
-  const [notifications, setNotifications] = useState([]);
+  const [sidebarNotifications, setSidebarNotifications] = useState([]);
   
   // États pour la valorisation
   const [selectedDechet, setSelectedDechet] = useState(null);
@@ -42,6 +44,12 @@ const TechnicienDashboard = () => {
     loadInitialData();
   }, [navigate]);
 
+  // Effect to track notifications for sidebar badge
+  useEffect(() => {
+    const unsubscribe = notificationService.addListener(setSidebarNotifications);
+    return unsubscribe;
+  }, []);
+
   const loadInitialData = async () => {
     try {
       setLoading(true);
@@ -49,8 +57,7 @@ const TechnicienDashboard = () => {
         loadUserData(),
         loadStats(),
         loadDechetsRecus(),
-        loadProcessusValorisation(),
-        loadNotifications()
+        loadProcessusValorisation()
       ]);
     } catch (error) {
       console.error('Erreur lors du chargement:', error);
@@ -83,20 +90,16 @@ const TechnicienDashboard = () => {
     }
   };  const loadDechetsRecus = async () => {
     try {
-      const [dechetsRecus, dechetsEnCours, dechetsValorises] = await Promise.all([
-        wasteService.getDechetsRecus(),
-        wasteService.getDechetsEnCours(),
-        wasteService.getDechetsValorises()
-      ]);
+      const response = await wasteService.getDechetsRecus();
       
-      // Organiser les déchets par statut
-      const tousLesDechets = [
-        ...(dechetsRecus.dechets || []).map(d => ({ ...d, statut: 'nouveau', actionDisponible: true })),
-        ...(dechetsEnCours.dechets || []).map(d => ({ ...d, statut: 'en_cours', actionDisponible: true })),
-        ...(dechetsValorises.dechets || []).map(d => ({ ...d, statut: 'termine', actionDisponible: false }))
-      ];
+      // Récupérer seulement les déchets reçus (pas encore traités)
+      const dechetsRecus = (response.dechets || []).map(d => ({
+        ...d,
+        statut: 'nouveau',
+        actionDisponible: true
+      }));
       
-      setDechetsRecus(tousLesDechets);
+      setDechetsRecus(dechetsRecus);
     } catch (error) {
       console.error('Erreur déchets reçus:', error);
       setDechetsRecus([]);
@@ -110,25 +113,27 @@ const TechnicienDashboard = () => {
       
       // Créer des processus basés sur les déchets en cours et terminés
       const processus = [
+        // Déchets en cours de valorisation
         ...(dechetsEnCours.dechets || []).map(d => ({
           id: `process_${d.id}`,
           dechetId: d.id,
-          typeValorisation: d.etat_display || d.etat,
+          typeValorisation: d.etat_display || 'En cours de tri',
           statut: 'en_cours',
           dateDebut: d.date_traitement || d.created_at,
           dateFin: null,
           dechetDetails: d,
-          rendement: null
+          actions: ['continuer', 'finaliser']
         })),
+        // Déchets valorisés (historique)
         ...(dechetsValorises.dechets || []).map(d => ({
           id: `process_${d.id}`,
           dechetId: d.id,
           typeValorisation: d.etat_display || d.etat,
           statut: 'termine',
-          dateDebut: d.date_traitement || d.created_at,
+          dateDebut: d.created_at,
           dateFin: d.date_traitement,
           dechetDetails: d,
-          rendement: 85 // Mock rendement
+          actions: []
         }))
       ];
       
@@ -137,33 +142,6 @@ const TechnicienDashboard = () => {
       console.error('Erreur processus valorisation:', error);
       setProcessusValorisation([]);
     }
-  };
-
-  const loadNotifications = async () => {
-    const mockNotifications = [
-      {
-        id: 1,
-        type: 'nouveau_dechet',
-        message: 'Nouveaux déchets électroniques reçus',
-        time: '1h',
-        unread: true
-      },
-      {
-        id: 2,
-        type: 'processus_termine',
-        message: 'Processus de valorisation terminé - Lot #2024-003',
-        time: '3h',
-        unread: true
-      },
-      {
-        id: 3,
-        type: 'rappel',
-        message: 'Contrôle qualité programmé demain',
-        time: '1j',
-        unread: false
-      }
-    ];
-    setNotifications(mockNotifications);
   };
 
   const handleLogout = async () => {
@@ -179,9 +157,17 @@ const TechnicienDashboard = () => {
       if (dechet.statut === 'nouveau') {
         // D'abord démarrer la valorisation (assigner au technicien)
         await wasteService.demarrerValorisation(dechet.id);
+        
+        // Recharger les données pour mettre à jour les sections
+        await Promise.all([
+          loadDechetsRecus(),
+          loadProcessusValorisation(),
+          loadStats()
+        ]);
       }
       
-      setSelectedDechet(dechet);      setValorisationData({
+      setSelectedDechet(dechet);
+      setValorisationData({
         typeValorisation: 'A_RECYCLER', // Valeur par défaut
         quantiteValorisee: dechet.quantite || '',
         rendement: '85',
@@ -231,20 +217,58 @@ const TechnicienDashboard = () => {
       // Extraire l'ID du déchet du processusId
       const dechetId = processusId.replace('process_', '');
       
-      // Finaliser la valorisation (marquer comme recyclé ou détruit selon le type)
+      // Trouver le processus correspondant
       const processus = processusValorisation.find(p => p.id === processusId);
-      const etatFinal = processus?.typeValorisation?.includes('RECYCL') ? 'RECYCLE' : 'DETRUIT';
       
-      await wasteService.valoriserDechet(dechetId, etatFinal);
+      if (!processus) {
+        alert('Processus non trouvé');
+        return;
+      }
+      
+      // Demander le type de valorisation
+      const typeValorisation = window.prompt(
+        `Finaliser la valorisation de ${processus.dechetDetails?.type}\n\nChoisissez le type de valorisation:\n1 - Recyclage (tapez "1" ou "recycler")\n2 - Destruction (tapez "2" ou "detruire")`,
+        "1"
+      );
+      
+      if (!typeValorisation) {
+        return; // Annulé
+      }
+      
+      let valorisationType;
+      let methode;
+      
+      if (typeValorisation === "1" || typeValorisation.toLowerCase().includes("recycl")) {
+        valorisationType = 'A_RECYCLER';
+        methode = 'Recyclage';
+      } else if (typeValorisation === "2" || typeValorisation.toLowerCase().includes("detru")) {
+        valorisationType = 'A_DETRUIRE';
+        methode = 'Destruction';
+      } else {
+        alert('Choix non valide. Utilisez 1 pour recyclage ou 2 pour destruction.');
+        return;
+      }
+      
+      // Préparer les données de valorisation
+      const formData = {
+        type_valorisation: valorisationType,
+        quantite_valorisee: processus.dechetDetails?.quantite || 0,
+        rendement: '85', // Rendement par défaut
+        methode_valorisation: methode,
+        notes_technicien: `Valorisation finalisée: ${methode}`
+      };
 
-      // Recharger les données
+      // Finaliser la valorisation
+      await wasteService.valoriserDechetComplet(dechetId, formData);
+
+      // Recharger les données pour mettre à jour toutes les sections
       await Promise.all([
         loadDechetsRecus(),
         loadProcessusValorisation(),
         loadStats()
       ]);
       
-      alert('Processus de valorisation terminé !');
+      alert(`Valorisation finalisée avec succès ! Type: ${methode}`);
     } catch (error) {
       console.error('Erreur terminer processus:', error);
       alert('Erreur lors de la finalisation: ' + (error.response?.data?.error || error.message));
@@ -323,7 +347,7 @@ const TechnicienDashboard = () => {
             className="action-btn tertiary"
             onClick={() => setActiveSection('notifications')}
           >
-            🔔 Notifications ({notifications.filter(n => n.unread).length})
+            🔔 Notifications ({sidebarNotifications.filter(n => !n.read).length})
           </button>
         </div>
       </div>
@@ -358,7 +382,7 @@ const TechnicienDashboard = () => {
     <div className="dechets-section">
       <div className="section-header">
         <h2>Déchets Reçus</h2>
-        <p>Déchets livrés par les transporteurs en attente de valorisation</p>
+        <p>Déchets livrés par les transporteurs, disponibles pour valorisation</p>
       </div>
 
       {/* Filtres */}
@@ -370,9 +394,7 @@ const TechnicienDashboard = () => {
             onChange={(e) => setDechetFilter(e.target.value)}
           >
             <option value="tous">Tous</option>
-            <option value="nouveau">Nouveaux</option>
-            <option value="en_cours">En cours</option>
-            <option value="termine">Terminés</option>
+            <option value="nouveau">En attente</option>
           </select>
         </div>
       </div>
@@ -384,14 +406,14 @@ const TechnicienDashboard = () => {
             <div className="card-header">
               <h4>{dechet.collecte?.utilisateur?.nom || 'Utilisateur inconnu'}</h4>
               <span className={`status-badge ${dechet.statut}`}>
-                {dechet.statut === 'nouveau' ? 'Nouveau' : 
+                {dechet.statut === 'nouveau' ? 'Disponible' : 
                  dechet.statut === 'en_cours' ? 'En cours' : 'Terminé'}
               </span>
             </div>
             
             <div className="card-content">
               <div className="info-row">
-                <span className="label">Type de déchet:</span>
+                <span className="label">Type:</span>
                 <span>{dechet.type}</span>
               </div>
               <div className="info-row">
@@ -407,27 +429,25 @@ const TechnicienDashboard = () => {
                 <span>{dechet.etat_display}</span>
               </div>
               <div className="info-row">
-                <span className="label">Collecte:</span>
+                <span className="label">Référence:</span>
                 <span>{dechet.collecte?.reference}</span>
               </div>
-              {dechet.description && (
+              {dechet.collecte?.date_collecte && (
                 <div className="info-row">
-                  <span className="label">Description:</span>
-                  <span>{dechet.description}</span>
+                  <span className="label">Date collecte:</span>
+                  <span>{new Date(dechet.collecte.date_collecte).toLocaleDateString()}</span>
                 </div>
               )}
             </div>
             
-            <div className="card-actions">
-              {dechet.actionDisponible && dechet.statut !== 'termine' && (
-                <button 
-                  className="btn-action primary"
-                  onClick={() => commencerValorisation(dechet)}
-                >
-                  {dechet.statut === 'nouveau' ? 'Commencer Valorisation' : 'Continuer Valorisation'}
-                </button>
-              )}
-            </div>
+            {dechet.actionDisponible && dechet.statut !== 'termine' && (
+              <button 
+                className="card-button"
+                onClick={() => commencerValorisation(dechet)}
+              >
+                {dechet.statut === 'nouveau' ? 'Commencer' : 'Continuer'}
+              </button>
+            )}
           </div>
         ))}
         
@@ -437,7 +457,8 @@ const TechnicienDashboard = () => {
             <h3>Aucun déchet reçu</h3>
             <p>Aucun déchet ne correspond aux filtres sélectionnés.</p>
           </div>
-        )}      </div>
+        )}
+      </div>
 
       {/* Modal de valorisation */}
       {showValorisationModal && selectedDechet && (
@@ -557,8 +578,8 @@ const TechnicienDashboard = () => {
   const renderValorisation = () => (
     <div className="valorisation-section">
       <div className="section-header">
-        <h2>Processus de Valorisation</h2>
-        <p>Suivi des processus de valorisation en cours et terminés</p>
+        <h2>Valoriser les Déchets</h2>
+        <p>Déchets en cours de valorisation et historique des traitements effectués</p>
       </div>
 
       {/* Filtres */}
@@ -618,9 +639,15 @@ const TechnicienDashboard = () => {
                 {processus.statut === 'en_cours' && (
                   <button 
                     className="btn-sm primary"
-                    onClick={() => terminerProcessus(processus.id)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('Button clicked for processus:', processus.id);
+                      terminerProcessus(processus.id);
+                    }}
+                    style={{ cursor: 'pointer' }}
                   >
-                    ✅ Terminer
+                    ✅ Finaliser Valorisation
                   </button>
                 )}
                 {processus.statut === 'termine' && (
@@ -647,29 +674,11 @@ const TechnicienDashboard = () => {
   const renderNotifications = () => (
     <div className="notifications-section">
       <div className="section-header">
-        <h2>Notifications</h2>
-        <p>Alertes et messages techniques</p>
+        <h2>Centre de Notifications</h2>
+        <p>Toutes vos notifications en temps réel</p>
       </div>
-
-      <div className="notifications-list">
-        {notifications.map(notification => (
-          <div 
-            key={notification.id} 
-            className={`notification-item ${notification.unread ? 'unread' : ''}`}
-          >
-            <div className="notification-icon">
-              {notification.type === 'nouveau_dechet' && '📦'}
-              {notification.type === 'processus_termine' && '✅'}
-              {notification.type === 'rappel' && '🔔'}
-            </div>
-            <div className="notification-content">
-              <p>{notification.message}</p>
-              <span className="notification-time">Il y a {notification.time}</span>
-            </div>
-            {notification.unread && <div className="unread-indicator"></div>}
-          </div>
-        ))}
-      </div>
+      
+      <NotificationCenter userRole="TECHNICIEN" showAsDropdown={false} />
     </div>
   );
 
@@ -693,6 +702,7 @@ const TechnicienDashboard = () => {
           </div>
           
           <div className="dashboard-user-info">
+            <NotificationCenter userRole="TECHNICIEN" showAsDropdown={true} />
             <span className="user-welcome">
               Bonjour, {user?.first_name || user?.username}
             </span>
@@ -733,9 +743,9 @@ const TechnicienDashboard = () => {
           >
             <span className="menu-icon">🔔</span>
             Notifications
-            {notifications.filter(n => n.unread).length > 0 && (
+            {sidebarNotifications.filter(n => !n.read).length > 0 && (
               <span className="notification-badge">
-                {notifications.filter(n => n.unread).length}
+                {sidebarNotifications.filter(n => !n.read).length}
               </span>
             )}
           </button>

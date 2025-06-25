@@ -3,6 +3,8 @@ import { authService, userService, wasteService } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import { STATUS_LABELS, COLLECTE_STATUS } from '../../utils/constants';
 import Logo from '../../components/common/Logo';
+import NotificationCenter from '../../components/common/NotificationCenter';
+import { notificationService } from '../../services/notificationService';
 import '../../styles/TransporteurDashboard.css';
 
 const TransporteurDashboard = () => {
@@ -1019,6 +1021,7 @@ const TransporteurDashboard = () => {
           </div>
           
           <div className="dashboard-user-info">
+            <NotificationCenter userRole="TRANSPORTEUR" showAsDropdown={true} />
             <span className="user-welcome">
               Bonjour, {user?.first_name || user?.username}
             </span>

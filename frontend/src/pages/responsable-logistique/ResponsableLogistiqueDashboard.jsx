@@ -4,6 +4,8 @@ import { authService, userService, wasteService } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import { STATUS_LABELS, COLLECTE_STATUS } from '../../utils/constants';
 import Logo from '../../components/common/Logo';
+import NotificationCenter from '../../components/common/NotificationCenter';
+import { notificationService } from '../../services/notificationService';
 
 const ResponsableLogistiqueDashboard = () => {
   const navigate = useNavigate();
@@ -16,6 +18,7 @@ const ResponsableLogistiqueDashboard = () => {
   const [dechets, setDechets] = useState([]);
   const [formulaires, setFormulaires] = useState([]);
   const [transporteurs, setTransporteurs] = useState([]);
+  const [sidebarNotifications, setSidebarNotifications] = useState([]);
   
   // États pour la planification
   const [showPlanificationModal, setShowPlanificationModal] = useState(false);
@@ -40,6 +43,13 @@ const ResponsableLogistiqueDashboard = () => {
     
     loadInitialData();
   }, [navigate]);
+
+  // Effect to track notifications for sidebar badge
+  useEffect(() => {
+    const unsubscribe = notificationService.addListener(setSidebarNotifications);
+    return unsubscribe;
+  }, []);
+
   const loadInitialData = async () => {
     try {
       setLoading(true);
@@ -561,6 +571,17 @@ const ResponsableLogistiqueDashboard = () => {
     </div>
   );
 
+  const renderNotifications = () => (
+    <div className="notifications-section">
+      <div className="section-header">
+        <h2>Centre de Notifications</h2>
+        <p>Toutes vos notifications logistiques en temps réel</p>
+      </div>
+      
+      <NotificationCenter userRole="RESPONSABLE_LOGISTIQUE" showAsDropdown={false} />
+    </div>
+  );
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -580,6 +601,7 @@ const ResponsableLogistiqueDashboard = () => {
           </div>
           
           <div className="dashboard-user-info">
+            <NotificationCenter userRole="RESPONSABLE_LOGISTIQUE" showAsDropdown={true} />
             <span className="user-welcome">
               Bonjour, {user?.first_name || user?.username}
             </span>
@@ -621,6 +643,18 @@ const ResponsableLogistiqueDashboard = () => {
             <span className="menu-icon">📈</span>
             Rapports
           </button>
+          <button 
+            className={`menu-item ${activeSection === 'notifications' ? 'active' : ''}`}
+            onClick={() => setActiveSection('notifications')}
+          >
+            <span className="menu-icon">🔔</span>
+            Notifications
+            {sidebarNotifications.filter(n => !n.read).length > 0 && (
+              <span className="notification-badge">
+                {sidebarNotifications.filter(n => !n.read).length}
+              </span>
+            )}
+          </button>
         </div>
       </nav>
 
@@ -630,6 +664,7 @@ const ResponsableLogistiqueDashboard = () => {
         {activeSection === 'planification' && renderPlanification()}
         {activeSection === 'tracabilite' && renderTracabilite()}
         {activeSection === 'rapports' && renderRapports()}
+        {activeSection === 'notifications' && renderNotifications()}
       </main>
     </div>
   );
