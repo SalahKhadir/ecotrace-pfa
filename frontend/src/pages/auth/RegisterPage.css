@@ -1,0 +1,418 @@
+/* Register Page Styles - EcoTrace Color Palette */
+@import '../../styles/colors.css';
+
+.register-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--eco-blue) 0%, var(--eco-green) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.register-container {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px var(--eco-blue-10);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  max-width: 1200px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  border: 1px solid var(--eco-gray);
+}
+
+.register-form-section {
+  padding: 40px;
+  overflow-y: auto;
+  max-height: 90vh;
+}
+
+.register-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.register-header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--eco-dark);
+  margin: 20px 0 10px 0;
+}
+
+.register-header p {
+  color: var(--eco-blue);
+  font-size: 1rem;
+  opacity: 0.8;
+}
+
+.register-form {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.form-section {
+  margin-bottom: 30px;
+  border-bottom: 1px solid var(--eco-gray);
+  padding-bottom: 25px;
+}
+
+.form-section:last-of-type {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.form-section h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--eco-blue);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: var(--eco-dark);
+  font-size: 0.9rem;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--eco-gray);
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  background-color: #fafafa;
+  color: var(--eco-dark);
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--eco-green);
+  background-color: white;
+  box-shadow: 0 0 0 3px var(--eco-green-10);
+}
+
+.form-group small {
+  color: var(--eco-blue);
+  font-size: 0.8rem;
+  margin-top: 5px;
+  display: block;
+  opacity: 0.7;
+}
+
+/* Role Selection */
+.role-selection {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.role-option {
+  position: relative;
+}
+
+.role-option input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.role-label {
+  display: block;
+  padding: 20px;
+  border: 2px solid var(--eco-gray);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: #fafafa;
+  text-align: center;
+}
+
+.role-option input[type="radio"]:checked + .role-label {
+  border-color: var(--eco-green);
+  background: linear-gradient(135deg, var(--eco-green) 0%, var(--eco-green-light) 100%);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px var(--eco-green-20);
+}
+
+.role-icon {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+}
+
+.role-info h4 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.role-info p {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  margin-bottom: 10px;
+}
+
+.role-info small {
+  font-size: 0.8rem;
+  opacity: 0.9;
+  font-weight: 500;
+}
+
+/* Password Input */
+.password-input {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input input {
+  padding-right: 50px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: var(--eco-blue);
+  transition: color 0.2s ease;
+}
+
+.password-toggle:hover {
+  color: var(--eco-green);
+}
+
+/* Messages */
+.error-message,
+.success-message {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
+}
+
+.error-message {
+  background-color: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.success-message {
+  background-color: var(--eco-green-10);
+  color: var(--eco-green-dark);
+  border: 1px solid var(--eco-green-20);
+}
+
+.error-icon,
+.success-icon {
+  font-size: 1.1rem;
+}
+
+/* Register Button */
+.register-button {
+  width: 100%;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, var(--eco-green) 0%, var(--eco-green-light) 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.register-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px var(--eco-green-20);
+  background: linear-gradient(135deg, var(--eco-green-light) 0%, var(--eco-green) 100%);
+}
+
+.register-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Footer */
+.register-footer {
+  text-align: center;
+  color: var(--eco-blue);
+  opacity: 0.7;
+}
+
+.login-link {
+  color: var(--eco-green);
+  text-decoration: none;
+  font-weight: 600;
+  margin-left: 5px;
+  transition: color 0.2s ease;
+}
+
+.login-link:hover {
+  color: var(--eco-green-dark);
+  text-decoration: underline;
+}
+
+/* Info Section */
+.register-info-section {
+  background: linear-gradient(135deg, var(--eco-blue) 0%, var(--eco-blue-light) 100%);
+  color: white;
+  padding: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.info-content h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.features {
+  display: grid;
+  gap: 25px;
+}
+
+.feature {
+  text-align: center;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.feature-icon {
+  font-size: 2.5rem;
+  margin-bottom: 15px;
+}
+
+.feature h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.feature p {
+  opacity: 0.9;
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .register-container {
+    grid-template-columns: 1fr;
+    max-width: 600px;
+  }
+  
+  .register-info-section {
+    order: -1;
+    padding: 30px;
+  }
+  
+  .info-content h2 {
+    font-size: 1.5rem;
+  }
+  
+  .features {
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .register-page {
+    padding: 10px;
+  }
+  
+  .register-form-section {
+    padding: 30px 25px;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .role-selection {
+    grid-template-columns: 1fr;
+  }
+  
+  .features {
+    grid-template-columns: 1fr;
+  }
+  
+  .feature {
+    padding: 15px;
+  }
+  
+  .register-header h1 {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .register-form-section {
+    padding: 20px 15px;
+  }
+  
+  .form-group input,
+  .form-group textarea {
+    padding: 10px 12px;
+    font-size: 0.9rem;
+  }
+  
+  .register-button {
+    padding: 12px 20px;
+    font-size: 0.9rem;
+  }
+}

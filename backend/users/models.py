@@ -55,6 +55,19 @@ class User(AbstractUser):
         help_text='Numéro SIRET (si entreprise)'
     )
     
+    company_address = models.TextField(
+        blank=True,
+        null=True,
+        help_text='Adresse de l\'entreprise (si applicable)'
+    )
+    
+    company_phone = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        help_text='Téléphone de l\'entreprise (si applicable)'
+    )
+    
     # Statut actif
     is_active = models.BooleanField(default=True)
     

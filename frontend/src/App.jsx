@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 // Pages
 import Home from './pages/Home';
 import LoginPage from './pages/auth/LoginPage';
+import RegisterPage from './pages/auth/RegisterPage';
 
 // Dashboards
 import ParticulierDashboard from './pages/particulier/ParticulierDashboard';
@@ -57,9 +58,10 @@ function App() {
     <Router>
       <div className="App">
         <Routes>
-          {/* Route publique */}
+          {/* Routes publiques */}
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
 
           {/* Redirection automatique vers le bon dashboard */}
           <Route

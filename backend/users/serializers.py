@@ -79,17 +79,35 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
     password_confirm = serializers.CharField(write_only=True)
     
+    # Champs optionnels pour les entreprises
+    company_address = serializers.CharField(required=False, allow_blank=True)
+    company_phone = serializers.CharField(required=False, allow_blank=True)
+    siret = serializers.CharField(required=False, allow_blank=True)
+    
     class Meta:
         model = User
         fields = [
             'username', 'email', 'password', 'password_confirm',
             'first_name', 'last_name', 'role', 'phone', 'address',
-            'company_name', 'company_siret'
+            'company_name', 'company_siret', 'company_address', 'company_phone', 'siret'
         ]
     
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirm']:
             raise serializers.ValidationError("Les mots de passe ne correspondent pas.")
+        
+        # Validation spécifique pour les entreprises
+        role = attrs.get('role')
+        if role == 'ENTREPRISE':
+            if not attrs.get('company_name'):
+                raise serializers.ValidationError("Le nom de l'entreprise est requis pour les comptes entreprise.")
+            if not attrs.get('siret'):
+                raise serializers.ValidationError("Le numéro SIRET est requis pour les comptes entreprise.")
+        
+        # Seuls PARTICULIER et ENTREPRISE peuvent s'inscrire
+        if role not in ['PARTICULIER', 'ENTREPRISE']:
+            raise serializers.ValidationError("Seuls les particuliers et entreprises peuvent s'inscrire directement.")
+        
         return attrs
     
     def validate_email(self, value):
@@ -102,12 +120,30 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Ce nom d'utilisateur est déjà pris.")
         return value
     
+    def validate_siret(self, value):
+        if value and len(value.replace(' ', '')) != 14:
+            raise serializers.ValidationError("Le numéro SIRET doit contenir exactement 14 chiffres.")
+        return value
+    
     def create(self, validated_data):
         # Supprimer password_confirm des données
         validated_data.pop('password_confirm')
         
+        # Gérer le champ SIRET (utiliser siret pour company_siret)
+        siret = validated_data.pop('siret', None)
+        if siret:
+            validated_data['company_siret'] = siret
+        
         # Créer l'utilisateur
         password = validated_data.pop('password')
+        role = validated_data.get('role')
+        
+        # Les entreprises sont inactives par défaut, les particuliers sont actifs
+        if role == 'ENTREPRISE':
+            validated_data['is_active'] = False
+        else:  # PARTICULIER
+            validated_data['is_active'] = True
+        
         user = User.objects.create_user(**validated_data)
         user.set_password(password)
         user.save()

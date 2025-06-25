@@ -158,6 +158,16 @@ const LoginPage = () => {
             </button>
           </form>
 
+          {/* Lien d'inscription */}
+          <div className="register-link">
+            <p>
+              Pas encore de compte ? 
+              <Link to="/register" className="register-link-text">
+                S'inscrire
+              </Link>
+            </p>
+          </div>
+
           {/* Comptes de test */}
           <div className="test-accounts">
             <p className="test-accounts-title">Comptes de test - Cliquez pour remplir automatiquement :</p>

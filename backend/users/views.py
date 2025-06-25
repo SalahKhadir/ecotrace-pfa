@@ -91,22 +91,78 @@ class RegisterView(generics.CreateAPIView):
         if serializer.is_valid():
             user = serializer.save()
             
-            # Générer les tokens pour l'utilisateur nouvellement créé
-            refresh = RefreshToken.for_user(user)
-            access_token = refresh.access_token
-            
-            return Response({
-                'message': 'Inscription réussie',
-                'access': str(access_token),
-                'refresh': str(refresh),
-                'user': {
-                    'id': user.id,
-                    'username': user.username,
-                    'email': user.email,
-                    'role': user.role,
-                    'dashboard_url': user.get_dashboard_url(),
-                }
-            }, status=status.HTTP_201_CREATED)
+            # Réponse différente selon le rôle
+            if user.role == 'PARTICULIER':
+                # Pour les particuliers: connexion automatique
+                refresh = RefreshToken.for_user(user)
+                access_token = refresh.access_token
+                
+                # Créer une notification de bienvenue
+                from notifications.services import NotificationService
+                NotificationService.create_notification(
+                    title="Bienvenue sur EcoTrace !",
+                    message=f"Bonjour {user.first_name}, votre compte particulier a été créé avec succès. Vous pouvez maintenant gérer vos déchets de manière écologique.",
+                    user=user,
+                    notification_type='success',
+                    category='system',
+                    priority='normal'
+                )
+                
+                return Response({
+                    'message': 'Inscription réussie',
+                    'access': str(access_token),
+                    'refresh': str(refresh),
+                    'user': {
+                        'id': user.id,
+                        'username': user.username,
+                        'email': user.email,
+                        'first_name': user.first_name,
+                        'last_name': user.last_name,
+                        'role': user.role,
+                        'is_active': user.is_active,
+                        'dashboard_url': user.get_dashboard_url(),
+                    }
+                }, status=status.HTTP_201_CREATED)
+                
+            elif user.role == 'ENTREPRISE':
+                # Pour les entreprises: compte en attente de validation
+                
+                # Créer une notification pour l'utilisateur
+                from notifications.services import NotificationService
+                NotificationService.create_notification(
+                    title="Compte en attente de validation",
+                    message=f"Bonjour {user.first_name}, votre compte entreprise '{user.company_name}' a été créé mais nécessite une validation par un administrateur. Vous recevrez un email de confirmation dès que votre compte sera activé.",
+                    user=user,
+                    notification_type='info',
+                    category='system',
+                    priority='normal'
+                )
+                
+                # Notifier les administrateurs
+                NotificationService.create_notification(
+                    title="Nouvelle inscription entreprise",
+                    message=f"Une nouvelle entreprise '{user.company_name}' s'est inscrite et attend validation. Utilisateur: {user.first_name} {user.last_name} ({user.email})",
+                    target_role='ADMINISTRATEUR',
+                    notification_type='info',
+                    category='utilisateur',
+                    priority='normal',
+                    action_url=f'/dashboard/administrateur?section=utilisateurs&user={user.id}'
+                )
+                
+                return Response({
+                    'message': 'Inscription entreprise réussie. Votre compte est en attente de validation par un administrateur.',
+                    'user': {
+                        'id': user.id,
+                        'username': user.username,
+                        'email': user.email,
+                        'first_name': user.first_name,
+                        'last_name': user.last_name,
+                        'role': user.role,
+                        'company_name': user.company_name,
+                        'is_active': user.is_active,
+                    },
+                    'requires_activation': True
+                }, status=status.HTTP_201_CREATED)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
